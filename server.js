@@ -141,6 +141,21 @@ function suivreGuerre(war) {
 }
 
 app.get('/api/status', (req, res) => res.json({ api: Boolean(TOKEN), clan: CLAN_TAG || null, chef: Boolean(CHEF_CODE) }));
+// Diagnostic : teste trois appels à l'API Clash et dit lequel est refusé (aucun secret n'est affiché).
+app.get('/api/diag', async (req, res) => {
+  const out = { clan: CLAN_TAG || null, base: API_BASE, cleLongueur: TOKEN.length, tests: {} };
+  for (const [nom, route] of [['clan', ''], ['journal', '/warlog'], ['guerreEnCours', '/currentwar']]) {
+    try {
+      const r = await fetch(API_BASE + '/clans/' + encodeURIComponent(CLAN_TAG) + route, {
+        headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/json' },
+        signal: AbortSignal.timeout(10000),
+      });
+      const b = await r.json().catch(() => ({}));
+      out.tests[nom] = { statut: r.status, raison: b.reason || null, nom: route === '' ? b.name || null : undefined };
+    } catch (e) { out.tests[nom] = { statut: 'injoignable' }; }
+  }
+  res.json(out);
+});
 app.get('/api/war', async (req, res) => {
   try {
     const war = simplifyWar(await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar`));
