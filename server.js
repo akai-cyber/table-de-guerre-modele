@@ -17,7 +17,7 @@ try {
 } catch (e) { /* pas de fichier .env */ }
 
 const PORT = Number(process.env.PORT) || 3000;
-const TOKEN = (process.env.CLASH_API_TOKEN || '').trim();
+const TOKEN = (process.env.CLASH_API_TOKEN || '').replace(/\s+/g, '').replace(/^Bearer/i, '');
 const API_BASE = (process.env.CLASH_API_BASE || 'https://api.clashofclans.com/v1').replace(/\/+$/, '');
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 const CACHE_MS = process.env.CACHE_MS !== undefined ? Number(process.env.CACHE_MS) : 15000; // l'API est interrogée au plus une fois par 15 s
