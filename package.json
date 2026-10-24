@@ -1,0 +1,26 @@
+{
+  "name": "table-de-guerre",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Table de guerre Clash of Clans, version Cloudflare : gratuite, toujours en ligne, sans PC",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.152.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "CLASH_API_TOKEN": {
+        "description": "Ta clé API Clash of Clans, créée sur developer.clashofclans.com avec l'adresse IP 45.79.218.79 (le relais RoyaleAPI)."
+      },
+      "CLAN_TAG": {
+        "description": "Le tag de ton clan, avec ou sans le # (par exemple 2PP0JCCL)."
+      },
+      "CHEF_CODE": {
+        "description": "Le code secret du chef : tu le tapes dans l'appli pour passer en mode chef. Choisis-en un que tu n'utilises nulle part ailleurs."
+      }
+    }
+  }
+}

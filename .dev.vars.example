@@ -1,0 +1,4 @@
+# Réglages secrets de la table de guerre : à remplir dans Cloudflare au moment du déploiement, jamais dans GitHub.
+CLASH_API_TOKEN=colle-ta-cle-ici
+CLAN_TAG=TON-TAG-ICI
+CHEF_CODE=choisis-un-code-secret
