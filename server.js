@@ -74,7 +74,10 @@ function frMessage(status, body) {
   if (status === 403 && /invalidIp/i.test(reason)) {
     return 'Clé API refusée pour l’adresse IP de ce PC : crée une clé sur developer.clashofclans.com avec l’IP publique actuelle du PC qui lance le serveur.';
   }
-  if (status === 403) return 'Accès refusé : vérifie la clé API et que le journal de guerre du clan est public.';
+  if (status === 403 && /invalidAuth/i.test(reason)) {
+    return 'Clé API invalide (raison : invalidAuth) : la clé enregistrée dans CLASH_API_TOKEN est fausse, incomplète ou a été supprimée.';
+  }
+  if (status === 403) return 'Accès refusé (raison : ' + (reason || 'inconnue') + ') : vérifie la clé API et que le journal de guerre du clan est public.';
   if (status === 404) return 'Clan introuvable : vérifie CLAN_TAG dans le fichier .env.';
   if (status === 429) return 'Trop de requêtes vers l’API Clash : réessaie dans quelques secondes.';
   if (status === 503) return 'L’API Clash of Clans est en maintenance.';
