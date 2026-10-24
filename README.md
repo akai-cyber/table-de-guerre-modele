@@ -4,6 +4,7 @@ Appli web (et appli Android) pour un clan Clash of Clans :
 
 - **Guerre** : guerre en cours en direct, cibles assignées par le chef, attaques restantes.
 - **Tableau** : le chef dessine le plan d'attaque sur la capture d'une base, les joueurs le voient en direct.
+- **Stats** : bilan du clan, classement des joueurs (note sur 100), historique des guerres, compos qui marchent ; fiche de chaque joueur (héros, engins de siège, familiers, attaques).
 - **Dispos (Signe / Non)** : le chef ouvre une période, chaque membre dit s'il est disponible ; statistiques, filtres, historique.
 - **Menu** : profil, mode chef, informations du clan, état du serveur.
 
@@ -30,6 +31,20 @@ Pour les garder, depuis un téléphone :
 4. Ajoute ces deux variables dans Render → Environment, puis **Save, rebuild, and deploy**.
 5. Menu → Serveur doit afficher « base Upstash (durable) ».
 
+## Historique et statistiques
+
+L'API Clash ne donne le détail des attaques que pour la guerre **en cours**. Le serveur enregistre donc la guerre
+à chaque consultation et toutes les 5 minutes tant qu'il est réveillé (guerres classiques et ligue de guerre).
+Les guerres plus anciennes viennent du journal officiel (score seulement, journal de guerre public requis).
+
+Pour ne rater aucune fin de guerre sur Render gratuit (mise en veille après 15 min) : créer une tâche gratuite sur
+cron-job.org qui ouvre `https://<ton-service>.onrender.com/api/war` toutes les 10 minutes.
+
+Note sur 100 : 40 pts triples (pondérés par l'écart d'HDV, ×0,7 à ×1,3), 25 pts étoiles moyennes, 20 pts attaques faites,
+15 pts destruction moyenne. Égalités départagées par les nouvelles étoiles puis le taux de triples.
+
+La compo utilisée n'est pas fournie par l'API : le joueur identifié (ou le chef) la choisit sur chaque attaque.
+
 ## Identité des membres (Signe / Non)
 
 Par défaut, un membre prouve son identité avec le **jeton API du jeu**
@@ -49,11 +64,15 @@ Le chef (code chef) peut saisir ou corriger la réponse d'un membre : c'est affi
   `POST /api/dispos/periodes/:id/cloture`, `DELETE /api/dispos/periodes/:id`,
   `PUT /api/dispos/periodes/:id/reponses/:tag`, `GET /api/dispos/periodes/:id/export.csv`
 
+- `GET /api/guerres`, `GET /api/guerres/:id`, `GET /api/stats?derniers=&type=c|l`, `GET /api/joueurs/:tag`,
+  `PUT /api/guerres/:id/compo` `{tag, ordre, compo}` (joueur lui-même ou chef)
+
 ## Limites connues
 
 - Pas de notification dans le jeu : le « Rappel » prépare un message à copier ou partager.
 - Pas de chat intégré (le bouton d'en-tête ouvre les informations du clan).
 - Les dessins du tableau restent en mémoire (perdus au redémarrage du serveur).
-- La version Cloudflare (branche `main`) n'a pas encore l'écran Signe / Non.
+- La version Cloudflare (branche `main`) n'a pas encore Signe / Non ni les statistiques.
+- Les illustrations officielles (héros, troupes) ne sont pas incluses : icônes originales seulement.
 
 This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: www.supercell.com/fan-content-policy.

@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const { Server } = require('socket.io');
 const { creerStockage } = require('./lib/stockage');
 const D = require('./lib/dispos');
+const G = require('./lib/guerres');
 
 // Lecture du fichier .env. Les variables déjà définies ne sont pas écrasées (la démo et les tests s'en servent).
 // Piège connu : une valeur qui commence par # sans guillemets est prise pour un commentaire et devient vide.
@@ -60,6 +61,8 @@ let warKey = null;    // identifie la guerre dont viennent les assignations
 let periodes = [];    // périodes « Signe / Non »
 let reponses = {};    // { idPériode: { '#TAG': { r: 'oui'|'non', le, par: 'membre'|'chef', nom } } }
 let sessions = {};    // { empreinte du jeton de session: { tag, nom, cree, vu } }
+let guerres = [];     // archives des guerres (classiques et ligue), pour l'historique et les statistiques
+const MAX_GUERRES = 40;
 
 const stockage = creerStockage({
   fichier: DATA_FILE,
@@ -74,13 +77,14 @@ function appliquerDonnees(d) {
   if (Array.isArray(d.periodes)) periodes = d.periodes.filter((p) => p && typeof p.id === 'string' && p.debut && p.fin);
   if (d.reponses && typeof d.reponses === 'object') reponses = d.reponses;
   if (d.sessions && typeof d.sessions === 'object') sessions = d.sessions;
+  if (Array.isArray(d.guerres)) guerres = d.guerres.filter((g) => g && typeof g.id === 'string' && Array.isArray(g.m));
   for (const [t, v] of Object.entries(assignments)) {
     if (!normTag(t) || !Number.isInteger(v) || v < 1 || v > 50) delete assignments[t];
   }
   const limite = Date.now() - SESSION_JOURS * D.JOUR;
   for (const [k, v] of Object.entries(sessions)) if (!v || Date.parse(v.vu || v.cree) < limite) delete sessions[k];
 }
-const save = () => stockage.enregistrer({ version: 2, warKey, assignments, periodes, reponses, sessions });
+const save = () => stockage.enregistrer({ version: 3, warKey, assignments, periodes, reponses, sessions, guerres });
 
 // ---------- API Clash of Clans ----------
 // La clé reste sur le serveur : elle n'est jamais envoyée aux téléphones.
@@ -104,6 +108,7 @@ function frMessage(status, body) {
 async function coc(route, ttl = CACHE_MS) {
   if (!TOKEN) throw Object.assign(new Error('Clé API manquante : renseigne CLASH_API_TOKEN dans le fichier .env.'), { status: 503 });
   if (!CLAN_TAG) throw Object.assign(new Error('Tag du clan manquant ou invalide : renseigne CLAN_TAG dans le fichier .env, entre guillemets (par exemple CLAN_TAG="#2PP0JCCL").'), { status: 503 });
+  if (CACHE_MS === 0) ttl = 0; // CACHE_MS=0 : aucun cache (tests, diagnostic)
   const hit = cache.get(route);
   if (hit && Date.now() - hit.t < ttl) return hit.data;
   let res;
@@ -157,6 +162,76 @@ function suivreGuerre(war) {
   save();
 }
 
+// ---------- Archives des guerres ----------
+// Chaque fois que la guerre en cours est lue, son état est enregistré : à la fin, toutes les attaques restent consultables.
+function archiver(brute, type, warTag) {
+  const id = type === 'l' ? 'l-' + String(warTag || '').replace('#', '') : 'c-' + (brute && (brute.preparationStartTime || brute.startTime));
+  const i = guerres.findIndex((g) => g.id === id);
+  const a = G.archiverGuerre(brute, { type, warTag, ancienne: i >= 0 ? guerres[i] : null });
+  if (!a || a.etat === 'preparation') return null;
+  if (i >= 0) {
+    const sans = (g) => JSON.stringify({ ...g, maj: 0 });
+    if (sans(guerres[i]) === sans(a)) return guerres[i]; // rien de neuf : pas d'écriture
+    guerres[i] = a;
+  } else guerres.push(a);
+  guerres.sort((x, y) => Date.parse(y.debut || y.prep) - Date.parse(x.debut || x.prep));
+  if (guerres.length > MAX_GUERRES) guerres.length = MAX_GUERRES;
+  save();
+  return a;
+}
+// Ligue de guerre de clans : 7 journées, une attaque par joueur. Les guerres terminées ne changent plus (cache long).
+async function suivreLigue() {
+  let groupe;
+  try { groupe = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar/leaguegroup`, 5 * 60e3); } catch (e) { return; }
+  if (!groupe || !Array.isArray(groupe.rounds)) return;
+  for (const r of groupe.rounds) for (const tag of r.warTags || []) {
+    if (!tag || tag === '#0') continue;
+    const deja = guerres.find((g) => g.id === 'l-' + tag.replace('#', ''));
+    if (deja && deja.etat === 'warEnded') continue;
+    let w;
+    try { w = await coc(`/clanwarleagues/wars/${encodeURIComponent(tag)}`, 5 * 60e3); } catch (e) { continue; }
+    if (!w || !w.clan || !w.opponent) continue;
+    if (w.opponent.tag === CLAN_TAG) [w.clan, w.opponent] = [w.opponent, w.clan]; // notre clan toujours à gauche
+    if (w.clan.tag === CLAN_TAG) archiver(w, 'l', tag);
+  }
+}
+// Relève automatique toutes les 5 minutes tant que le serveur est réveillé.
+async function releve() {
+  if (!TOKEN || !CLAN_TAG) return;
+  try { const w = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar`); archiver(w, 'c'); if (!w || w.state === 'notInWar') await suivreLigue(); } catch (e) { /* API indisponible : prochaine fois */ }
+}
+setInterval(releve, 5 * 60e3).unref();
+// Ligue : vérifiée au plus une fois par minute quand quelqu'un ouvre l'appli hors guerre classique.
+let derniereLigue = 0;
+function ligueSiBesoin() {
+  if (Date.now() - derniereLigue < (CACHE_MS === 0 ? 0 : 60e3) || !TOKEN || !CLAN_TAG) return Promise.resolve();
+  derniereLigue = Date.now();
+  return suivreLigue().catch(() => {});
+}
+
+const FR_HEROS = { 'Barbarian King': 'Roi des Barbares', 'Archer Queen': 'Reine des Archers', 'Grand Warden': 'Grand Gardien', 'Royal Champion': 'Championne Royale', 'Minion Prince': 'Prince Gargouille' };
+const SIEGES = { 'Wall Wrecker': 'Démolisseur', 'Battle Blimp': 'Dirigeable de combat', 'Stone Slammer': 'Stone Slammer', 'Siege Barracks': 'Caserne de siège', 'Log Launcher': 'Lance-bûches', 'Flame Flinger': 'Flame Flinger', 'Battle Drill': 'Battle Drill', 'Troop Launcher': 'Troop Launcher' };
+const FAMILIERS = new Set(['L.A.S.S.I', 'Electro Owl', 'Mighty Yak', 'Unicorn', 'Frosty', 'Diggy', 'Poison Lizard', 'Phoenix', 'Spirit Fox', 'Angry Jelly', 'Sneezy']);
+const ROLES_API = { leader: 'leader', coLeader: 'coLeader', admin: 'admin', member: 'member' };
+function profilJoueur(p) {
+  const maison = (l) => (l || []).filter((x) => x.village === 'home');
+  const troupes = maison(p.troops);
+  return {
+    tag: p.tag, nom: p.name, th: p.townHallLevel || null, armeHdv: p.townHallWeaponLevel || null, niveau: p.expLevel || null,
+    trophees: p.trophies || 0, recordTrophees: p.bestTrophies || 0, etoilesGuerre: p.warStars || 0,
+    attaquesGagnees: p.attackWins || 0, defensesGagnees: p.defenseWins || 0, dons: p.donations || 0, donsRecus: p.donationsReceived || 0,
+    role: ROLES_API[p.role] || null, preferenceGuerre: p.warPreference === 'in' ? 'in' : p.warPreference === 'out' ? 'out' : null,
+    ligue: p.league && p.league.name ? p.league.name : null, clan: p.clan ? p.clan.name : null,
+    heros: maison(p.heroes).map((h) => ({ nom: h.name, nomFr: FR_HEROS[h.name] || h.name, niveau: h.level, max: h.maxLevel,
+      equipements: (h.equipment || []).map((e) => ({ nom: e.name, niveau: e.level, max: e.maxLevel })) })),
+    sieges: troupes.filter((t) => SIEGES[t.name]).map((t) => ({ nom: SIEGES[t.name], niveau: t.level, max: t.maxLevel })),
+    familiers: troupes.filter((t) => FAMILIERS.has(t.name)).map((t) => ({ nom: t.name, niveau: t.level, max: t.maxLevel })),
+    troupes: { total: troupes.filter((t) => !SIEGES[t.name] && !FAMILIERS.has(t.name) && !/^Super /.test(t.name)).length,
+      auMax: troupes.filter((t) => !SIEGES[t.name] && !FAMILIERS.has(t.name) && !/^Super /.test(t.name) && t.level >= t.maxLevel).length },
+    sorts: { total: maison(p.spells).length, auMax: maison(p.spells).filter((t) => t.level >= t.maxLevel).length },
+  };
+}
+
 app.get('/api/status', (req, res) => res.json({ api: Boolean(TOKEN), clan: CLAN_TAG || null, chef: Boolean(CHEF_CODE), identite: IDENTITE, stockage: { type: stockage.etat.type, ok: stockage.etat.ok } }));
 // Diagnostic : teste trois appels à l'API Clash et dit lequel est refusé (aucun secret n'est affiché).
 app.get('/api/diag', async (req, res) => {
@@ -175,7 +250,10 @@ app.get('/api/diag', async (req, res) => {
 });
 app.get('/api/war', async (req, res) => {
   try {
-    const war = simplifyWar(await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar`));
+    const brute = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar`);
+    archiver(brute, 'c');
+    if (!brute || brute.state === 'notInWar') ligueSiBesoin();
+    const war = simplifyWar(brute);
     suivreGuerre(war);
     res.json(war);
   } catch (e) {
@@ -382,6 +460,73 @@ api.get('/dispos/periodes/:id/export.csv', exigerChef, async (req, res) => {
   res.set('Content-Disposition', `attachment; filename="signe-non-${p.debut.slice(0, 10)}.csv"`);
   res.send(D.exporterCSV(p, membres, reponses[p.id] || {}));
 });
+
+// ---------- Historique, statistiques, fiches joueurs ----------
+const entier = (v, def, max) => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 0 ? Math.min(n, max) : def; };
+const typeGuerre = (v) => (v === 'c' || v === 'l' ? v : 'tous');
+api.get('/guerres', async (req, res) => {
+  await ligueSiBesoin();
+  // Journal officiel (résultats seuls, y compris avant l'installation de l'appli) fusionné avec nos archives détaillées.
+  let journal = [], erreurJournal = null;
+  try { journal = ((await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/warlog?limit=40`, 10 * 60e3)).items) || []; } catch (e) { erreurJournal = e.message; }
+  const liste = guerres.map(G.resume);
+  const fins = new Set(guerres.map((g) => g.fin));
+  for (const w of journal) {
+    const fin = G.tdate(w.endTime);
+    if (!fin || fins.has(fin)) continue;
+    const ligue = !w.opponent || !w.opponent.name;
+    const clan = { n: w.clan && w.clan.name, t: w.clan && w.clan.tag, e: (w.clan && w.clan.stars) || 0, p: Math.round(((w.clan && w.clan.destructionPercentage) || 0) * 100) / 100, a: (w.clan && w.clan.attacks) || 0, b: null };
+    const adv = { n: ligue ? 'Ligue de guerre' : w.opponent.name, t: (w.opponent && w.opponent.tag) || '', e: (w.opponent && w.opponent.stars) || 0, p: Math.round(((w.opponent && w.opponent.destructionPercentage) || 0) * 100) / 100, b: w.opponent && w.opponent.badgeUrls ? w.opponent.badgeUrls.small : null };
+    liste.push({ id: 'j-' + w.endTime, type: ligue ? 'l' : 'c', etat: 'warEnded', debut: null, fin, taille: w.teamSize, apm: w.attacksPerMember || (ligue ? 1 : 2), clan, adv,
+      res: w.result === 'win' ? 'victoire' : w.result === 'lose' ? 'defaite' : w.result === 'tie' ? 'egalite' : null, details: false, mvp: null });
+  }
+  liste.sort((a, b) => Date.parse(b.fin || b.debut) - Date.parse(a.fin || a.debut));
+  res.json({ guerres: liste, archives: guerres.length, erreurJournal });
+});
+api.get('/guerres/:id', (req, res) => {
+  const g = guerres.find((x) => x.id === req.params.id);
+  if (!g) return erreur(res, 404, 'Guerre introuvable (seules les guerres suivies par l’appli ont le détail des attaques).');
+  res.json({ guerre: g, mvp: G.mvp(g) });
+});
+api.get('/stats', async (req, res) => {
+  const opts = { derniers: entier(req.query.derniers, 0, MAX_GUERRES), type: typeGuerre(req.query.type) };
+  const { joueurs, guerres: n } = G.statsJoueurs(guerres, opts);
+  let actuels = null;
+  try { actuels = new Set((await clanActuel()).members.map((m) => m.tag)); } catch (e) { /* liste indisponible */ }
+  res.json({ joueurs: joueurs.map((j) => ({ ...j, membre: actuels ? actuels.has(j.tag) : null })), clan: G.statsClan(guerres, opts), guerres: n, poids: G.POIDS });
+});
+api.get('/compos', (req, res) => res.json({ compos: G.COMPOS }));
+api.get('/joueurs/:tag', async (req, res) => {
+  const tag = normTag(req.params.tag);
+  if (!tag) return erreur(res, 400, 'Joueur invalide.');
+  let profil = null, erreurProfil = null;
+  try { profil = profilJoueur(await coc(`/players/${encodeURIComponent(tag)}`, 10 * 60e3)); } catch (e) { erreurProfil = e.message; }
+  const stats = G.statsJoueurs(guerres).joueurs.find((j) => j.tag === tag) || null;
+  const attaques = [];
+  for (const g of guerres) {
+    const m = g.m.find((x) => x.t === tag);
+    if (!m) continue;
+    attaques.push({ guerre: g.id, type: g.type, debut: g.debut, adv: g.adv.n, res: g.res, apm: g.apm, finie: g.etat === 'warEnded', pos: m.pos, th: m.th, a: m.a, de: m.de });
+  }
+  if (!profil && !stats) return erreur(res, erreurProfil ? 502 : 404, erreurProfil || 'Joueur introuvable.');
+  res.json({ tag, profil, erreurProfil, stats, guerres: attaques.slice(0, 20), compos: G.COMPOS });
+});
+// La compo utilisée n'est pas fournie par l'API : le joueur (pour lui-même) ou le chef la renseigne.
+api.put('/guerres/:id/compo', (req, res) => {
+  const g = guerres.find((x) => x.id === req.params.id);
+  if (!g) return erreur(res, 404, 'Guerre introuvable.');
+  const tag = normTag(req.body && req.body.tag), ordre = Number(req.body && req.body.ordre), compo = req.body && req.body.compo;
+  if (!tag || !Number.isInteger(ordre)) return erreur(res, 400, 'Attaque invalide.');
+  if (compo !== null && !G.COMPOS.includes(compo)) return erreur(res, 400, 'Compo inconnue.');
+  const s = sessionDe(req);
+  const chef = req.get('x-chef') ? checkCode(ipReq(req), req.get('x-chef')) === 'ok' : false;
+  if (!chef && !(s && s.tag === tag)) return erreur(res, 403, 'Seul le joueur lui-même (identifié) ou le chef peut indiquer sa compo.');
+  const m = g.m.find((x) => x.t === tag), a = m && m.a.find((x) => x.o === ordre);
+  if (!a) return erreur(res, 404, 'Attaque introuvable.');
+  if (compo === null) delete a.c; else a.c = compo;
+  save(); io.emit('guerres');
+  res.json({ ok: true });
+});
 app.use('/api', api);
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -531,5 +676,6 @@ stockage.charger().then(appliquerDonnees).finally(() => server.listen(PORT, '0.0
   if (!TOKEN) console.log('Attention : CLASH_API_TOKEN manquant, la guerre ne se chargera pas (voir README).');
   if (!CLAN_TAG) console.log('Attention : CLAN_TAG manquant ou invalide (voir README).');
   if (!CHEF_CODE) console.log('Attention : CHEF_CODE manquant, le mode chef est désactivé (voir README).');
+  setTimeout(releve, 60e3).unref();
   console.log(stockage.etat.type === 'upstash' ? 'Données enregistrées dans Upstash (durables).' : 'Données enregistrées dans un fichier local (effacé si l’hébergeur redémarre le service).');
 }));

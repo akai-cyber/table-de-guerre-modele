@@ -209,3 +209,11 @@ function initChef() {
   const bi = $('infosBtn');
   if (bi) bi.addEventListener('click', infosClan);
 }
+
+// ---------- Petits éléments partagés par les écrans de statistiques
+const ROLES_FR = { leader: 'Chef', coLeader: 'Chef adjoint', admin: 'Aîné', member: 'Membre' };
+const etoilesHtml = (n, max = 3) => `<span class="etoiles" aria-label="${n} étoile${n > 1 ? 's' : ''}">${'★'.repeat(n)}<span class="v">${'★'.repeat(Math.max(0, max - n))}</span></span>`;
+const formeHtml = (f) => `<span class="forme" title="Dernières attaques (étoiles)">${(f || []).map((e) => `<i class="e${e}">${e}</i>`).join('')}</span>`;
+const nombre = (v, d = 1) => (v == null ? '—' : Number(v).toLocaleString('fr-FR', { maximumFractionDigits: d }));
+const RESULTATS = { victoire: 'Victoire', defaite: 'Défaite', egalite: 'Égalité' };
+const ICONE_HEROS = { 'Barbarian King': 'roi', 'Archer Queen': 'reine', 'Grand Warden': 'gardien', 'Royal Champion': 'championne', 'Minion Prince': 'prince' };

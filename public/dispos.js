@@ -15,20 +15,26 @@ let erreurChargement = null, envoi = false;
 $('tri').value = tri;
 
 // ---------- Chargement
-let enCours = null;
+let enCours = null, aRefaire = false;
+// Un seul chargement à la fois ; une demande arrivée pendant un chargement (autre période choisie,
+// réponse d'un autre téléphone) relance un chargement juste après, pour ne jamais afficher de données périmées.
 async function charger() {
-  if (enCours) return enCours;
+  if (enCours) { aRefaire = true; return enCours; }
   enCours = (async () => {
-    const sessionEnvoyee = store.get('cb_session');
-    try {
-      D = await api('/api/dispos' + (periodeVue ? '?periode=' + encodeURIComponent(periodeVue) : ''));
-      erreurChargement = null;
-      if (D.moi) store.set('cb_moi', D.moi.tag);
-      else if (sessionEnvoyee && store.get('cb_session') === sessionEnvoyee) store.del('cb_session'); // session expirée ou effacée
-    } catch (e) {
-      erreurChargement = e.message;
-    }
-    rendre();
+    do {
+      aRefaire = false;
+      const sessionEnvoyee = store.get('cb_session'), vue = periodeVue;
+      try {
+        const d = await api('/api/dispos' + (vue ? '?periode=' + encodeURIComponent(vue) : ''));
+        if (vue !== periodeVue) { aRefaire = true; continue; } // la période affichée a changé entre-temps
+        D = d; erreurChargement = null;
+        if (D.moi) store.set('cb_moi', D.moi.tag);
+        else if (sessionEnvoyee && store.get('cb_session') === sessionEnvoyee) store.del('cb_session'); // session expirée ou effacée
+      } catch (e) {
+        erreurChargement = e.message;
+      }
+      rendre();
+    } while (aRefaire);
   })();
   try { await enCours; } finally { enCours = null; }
 }
@@ -313,13 +319,14 @@ function ouvrirMembre(tag) {
       <dt>Réponse</dt><dd>${r ? (r.r === 'oui' ? 'OUI' : 'NON') : 'Sans réponse'}</dd>
       ${r ? `<dt>Répondu</dt><dd>${esc(fmtDate(r.le))}</dd><dt>Saisie par</dt><dd>${r.par === 'chef' ? 'le chef' : 'le joueur'}</dd>` : ''}
     </dl>`;
-  const actions = [];
+  const actions = [{ texte: 'Stats', valeur: 'stats', classe: 'sombre', ico: 'stats' }];
   if (estChef && p) {
     actions.push({ texte: 'Oui', valeur: 'oui', classe: 'vert', ico: 'check' }, { texte: 'Non', valeur: 'non', classe: 'rouge', ico: 'croix' });
     if (r) actions.push({ texte: 'Effacer', valeur: 'effacer', classe: 'sombre', ico: 'poubelle' });
   }
   ui.modale({ titre: 'Fiche du membre', icone: 'joueur', corps: corps + (estChef && p ? '<small>Chef : tu peux saisir ou corriger sa réponse (indiqué « saisi par le chef »).</small>' : ''), actions }).then(async (v) => {
     if (!v) return;
+    if (v === 'stats') { location.href = '/joueur.html?tag=' + encodeURIComponent(m.tag); return; }
     const val = v === 'effacer' ? null : v;
     const msg = val ? `Enregistrer ${val.toUpperCase()} pour ${m.name} ? Ce sera indiqué comme saisi par le chef.` : `Effacer la réponse de ${m.name} ?`;
     if (!await ui.confirmer(msg, { ok: val ? 'Enregistrer' : 'Effacer', danger: !val })) return;
