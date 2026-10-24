@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17508A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Guerre">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Guerre · Table de guerre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div><h1 class="t">Table de guerre</h1><small id="sous">Chargement…</small></div>
+  <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
+</header>
+<div id="chefPanel" hidden>
+  <form id="chefForm">
+    <input id="chefCode" type="password" placeholder="Code chef" autocomplete="current-password" aria-label="Code chef">
+    <button class="btn on" type="submit">Valider</button>
+  </form>
+  <p id="chefMsg" class="doux" role="status"></p>
+</div>
+
+<main>
+  <section id="resume"></section>
+  <section id="moi" class="card" hidden>
+    <label for="moiSel" class="doux">Je suis…</label>
+    <select id="moiSel"></select>
+    <div id="moiInfo"></div>
+  </section>
+  <div class="seg" id="seg"></div>
+  <div class="seg" id="chefOutils" hidden>
+    <button type="button" class="btn" id="enFace">Tous en face</button>
+    <button type="button" class="btn" id="toutRetirer">Tout retirer</button>
+  </div>
+  <ul class="liste" id="liste"></ul>
+  <p class="doux mention">This material is unofficial and is not endorsed by Supercell. For more information see Supercell’s Fan Content Policy: www.supercell.com/fan-content-policy.</p>
+</main>
+
+<nav class="bas" aria-label="Navigation">
+  <a href="/" class="on" aria-current="page">Guerre</a>
+  <a href="/board.html">Tableau</a>
+  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></svg></a>
+</nav>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/common.js"></script>
+<script>
+initChef();
+
+let guerre = null, erreur = '', horsLigne = false, assign = {}, vue = 'membres', moi = store.get('cb_moi') || '', rerendre = false;
+
+const pct = (v) => (Math.round((v || 0) * 10) / 10).toLocaleString('fr-FR');
+const etoiles = (n) => '★'.repeat(n) + '☆'.repeat(Math.max(0, 3 - n));
+// L'API donne les dates au format 20261023T090000.000Z
+const tdate = (s) => {
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/.exec(s || '');
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : NaN;
+};
+const duree = (ms) => {
+  const min = Math.max(0, Math.floor(ms / 60000)), h = Math.floor(min / 60), j = Math.floor(h / 24);
+  if (j) return `${j} j ${h % 24} h`;
+  if (h) return `${h} h ${String(min % 60).padStart(2, '0')}`;
+  return `${min} min`;
+};
+
+const membre = (tag) => guerre && guerre.clan.members.find((m) => m.tag === tag);
+const adverse = (pos) => guerre && guerre.opponent.members.find((m) => m.pos === pos);
+const posAdverse = (tag) => { const o = guerre.opponent.members.find((m) => m.tag === tag); return o ? o.pos : null; };
+
+function resultat(g) {
+  const a = g.clan, b = g.opponent;
+  if (a.stars !== b.stars) return a.stars > b.stars ? 'Victoire' : 'Défaite';
+  if (a.pct !== b.pct) return a.pct > b.pct ? 'Victoire' : 'Défaite';
+  return 'Égalité';
+}
+function phase(g) {
+  if (g.state === 'preparation') return { texte: 'Préparation', cls: '' };
+  if (g.state === 'inWar') return { texte: 'En direct', cls: 'rouge' };
+  const r = resultat(g);
+  return { texte: r, cls: r === 'Victoire' ? 'vert' : r === 'Défaite' ? 'rouge' : '' };
+}
+
+function majChrono() {
+  const g = guerre, el = $('chrono');
+  if (!el || !g) return;
+  const cible = g.state === 'preparation' ? tdate(g.startTime) : g.state === 'inWar' ? tdate(g.endTime) : NaN;
+  el.textContent = isNaN(cible) ? '' : (g.state === 'preparation' ? 'Début dans ' : 'Fin dans ') + duree(cible - Date.now());
+}
+
+function majSous() {
+  const g = guerre;
+  $('sous').textContent = !g ? (horsLigne ? 'Hors ligne' : erreur ? 'Accès à l’API impossible' : 'Chargement…')
+    : g.state === 'notInWar' ? 'Pas de guerre en cours'
+    : `${g.clan.name} · ${phase(g).texte}`;
+}
+
+function rendreResume() {
+  const g = guerre;
+  let html = erreur ? `<div class="err" role="alert">${esc(erreur)}</div>` : '';
+  if (!g) {
+    if (!erreur) html = '<div class="card">Chargement de la guerre…</div>';
+  } else if (g.state === 'notInWar') {
+    html += '<div class="card"><b>Pas de guerre en cours.</b><br><small>La page se met à jour toute seule quand la préparation commence.</small></div>';
+  } else {
+    const p = phase(g);
+    html += `<div class="card">
+      <div class="duel">
+        <div><div class="nom">${esc(g.clan.name)}</div><div class="gros">${g.clan.stars} ★</div><small>${pct(g.clan.pct)} %</small></div>
+        <div class="t" aria-hidden="true">VS</div>
+        <div class="droite"><div class="nom">${esc(g.opponent.name)}</div><div class="gros">${g.opponent.stars} ★</div><small>${pct(g.opponent.pct)} %</small></div>
+      </div>
+      <div class="ligne"><span class="k ${p.cls}">${esc(p.texte)}</span><small id="chrono"></small></div>
+      ${g.state === 'preparation' ? '' : `<div class="ligne"><small>Attaques utilisées : ${g.clan.attacks} / ${g.teamSize * g.attacksPerMember}</small></div>`}
+    </div>`;
+  }
+  $('resume').innerHTML = html;
+  majChrono();
+}
+
+function rendreMoi() {
+  const g = guerre, box = $('moi'), sel = $('moiSel');
+  if (!g || g.state === 'notInWar') { box.hidden = true; return; }
+  box.hidden = false;
+  if (document.activeElement !== sel) {
+    sel.innerHTML = '<option value="">Choisis ton nom</option>' + g.clan.members.map((m) =>
+      `<option value="${esc(m.tag)}"${m.tag === moi ? ' selected' : ''}>${m.pos}. ${esc(m.name)}</option>`).join('');
+  }
+  const m = membre(moi);
+  let html = '';
+  if (m) {
+    const b = assign[m.tag], o = b && adverse(b), restantes = Math.max(0, g.attacksPerMember - m.attacks.length);
+    html = b
+      ? `<div class="etat">Ta cible : <b>Base ${b}</b>${o ? ` (HDV ${o.th})` : ''} <a class="k or" href="/board.html?base=${b}">Voir le plan</a></div>`
+      : '<div class="etat">Le chef ne t’a pas encore donné de cible.</div>';
+    if (g.state === 'inWar') {
+      html += `<small>${restantes ? `Il te reste ${restantes} attaque${restantes > 1 ? 's' : ''}.` : 'Tu as utilisé toutes tes attaques.'}</small>`;
+    }
+  }
+  $('moiInfo').innerHTML = html;
+}
+
+function rendreSeg() {
+  const g = guerre, seg = $('seg');
+  if (!g || g.state === 'notInWar') { seg.innerHTML = ''; return; }
+  const onglets = [['membres', 'Mon clan']];
+  if (g.state === 'inWar') onglets.push(['restants', 'À attaquer']);
+  onglets.push(['cibles', 'Cibles']);
+  if (!onglets.some(([k]) => k === vue)) vue = 'membres';
+  seg.innerHTML = onglets.map(([k, l]) =>
+    `<button type="button" class="btn${k === vue ? ' on' : ''}" data-vue="${k}" aria-pressed="${k === vue}">${l}</button>`).join('');
+}
+
+function ligneMembre(m) {
+  const g = guerre, max = g.attacksPerMember, n = m.attacks.length, cible = assign[m.tag];
+  let puce = '';
+  if (g.state !== 'preparation') {
+    puce = `<span class="k ${n >= max ? 'vert' : g.state === 'inWar' ? 'or' : ''}" title="Attaques utilisées">${n}/${max}</span>`;
+  }
+  const detail = m.attacks.map((a) => { const p = posAdverse(a.defender); return `B${p == null ? '?' : p} ${etoiles(a.stars)}`; }).join(' · ');
+  let action = '';
+  if (estChef && g.state !== 'warEnded') {
+    action = `<select data-assign="${esc(m.tag)}" aria-label="Cible de ${esc(m.name)}"><option value="">Pas de cible</option>${
+      g.opponent.members.map((o) => `<option value="${o.pos}"${cible === o.pos ? ' selected' : ''}>Base ${o.pos} · HDV ${o.th}${g.state === 'inWar' ? ' · ' + etoiles(o.best ? o.best.stars : 0) : ''}</option>`).join('')
+    }</select>`;
+  } else if (cible) {
+    action = `<a class="k or" href="/board.html?base=${cible}">Base ${cible}</a>`;
+  }
+  return `<li class="r${m.tag === moi ? ' moi' : ''}"><span class="pos">${m.pos}</span><div class="info"><b>${esc(m.name)}</b><small>HDV ${m.th}${detail ? ' · ' + esc(detail) : ''}</small></div>${puce}${action}</li>`;
+}
+
+function ligneCible(o) {
+  const g = guerre, s = o.best ? o.best.stars : 0, p = o.best ? o.best.pct : 0;
+  const attaquants = g.clan.members.filter((m) => m.attacks.some((a) => a.defender === o.tag)).map((m) => m.name);
+  const prevus = Object.entries(assign).filter(([, b]) => b === o.pos).map(([t]) => { const m = membre(t); return m ? m.name : t; });
+  const infos = [`HDV ${o.th}`];
+  if (g.state === 'inWar' && s === 2) infos.push('à finir');
+  if (prevus.length) infos.push('prévu : ' + prevus.join(', '));
+  if (attaquants.length) infos.push('attaquée par ' + attaquants.join(', '));
+  else if (g.state === 'inWar') infos.push('intacte');
+  const cls = s >= 3 ? 'vert' : s === 2 ? 'or' : '';
+  return `<li class="r"><span class="pos">${o.pos}</span><div class="info"><b>${esc(o.name)}</b><small>${esc(infos.join(' · '))}</small></div><span class="k ${cls}">${etoiles(s)} ${pct(p)} %</span><a class="k" href="/board.html?base=${o.pos}">Plan</a></li>`;
+}
+
+function majChefOutils() {
+  const g = guerre;
+  $('chefOutils').hidden = !(estChef && g && (g.state === 'preparation' || g.state === 'inWar') && vue === 'membres');
+}
+
+function rendreListe() {
+  const g = guerre, ul = $('liste');
+  majChefOutils();
+  if (!g || g.state === 'notInWar') { ul.innerHTML = ''; return; }
+  // Ne pas reconstruire la liste pendant que le chef choisit une cible (la liste se fermerait).
+  const a = document.activeElement;
+  if (a && a.tagName === 'SELECT' && ul.contains(a)) { rerendre = true; return; }
+  let html;
+  if (vue === 'cibles') {
+    html = g.opponent.members.map(ligneCible).join('');
+  } else {
+    let membres = g.clan.members;
+    if (vue === 'restants') membres = membres.filter((m) => m.attacks.length < g.attacksPerMember);
+    html = membres.map(ligneMembre).join('') || '<li class="card">Tout le monde a utilisé ses attaques.</li>';
+  }
+  ul.innerHTML = html;
+}
+
+function rendre() { majSous(); rendreResume(); rendreMoi(); rendreSeg(); rendreListe(); }
+
+$('moiSel').addEventListener('change', (e) => { moi = e.target.value; store.set('cb_moi', moi); rendreMoi(); rendreListe(); });
+$('seg').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-vue]');
+  if (!b) return;
+  vue = b.dataset.vue; rendreSeg(); rendreListe();
+});
+$('liste').addEventListener('change', (e) => {
+  const s = e.target.closest('select[data-assign]');
+  if (!s || !estChef) return;
+  socket.emit('assign', { tag: s.dataset.assign, target: s.value ? Number(s.value) : null });
+});
+// Raccourcis du chef : chacun attaque la base de son numéro (1 contre 1, 2 contre 2…), ou on repart de zéro.
+$('enFace').addEventListener('click', () => {
+  if (!estChef || !guerre) return;
+  if (Object.keys(assign).length && !confirm('Remplacer les cibles actuelles : chacun attaque la base de son numéro ?')) return;
+  guerre.clan.members.forEach((m) => socket.emit('assign', { tag: m.tag, target: adverse(m.pos) ? m.pos : null }));
+});
+$('toutRetirer').addEventListener('click', () => {
+  if (estChef && Object.keys(assign).length && confirm('Retirer toutes les cibles ?')) socket.emit('assign-reset');
+});
+$('liste').addEventListener('focusout', () => {
+  if (rerendre) { rerendre = false; setTimeout(rendreListe, 0); }
+});
+
+socket.on('assignments', (a) => { assign = a || {}; rendreMoi(); rendreListe(); });
+document.addEventListener('chef', rendreListe);
+
+async function charger() {
+  try {
+    const r = await fetch('/api/war', { cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `Erreur ${r.status}`);
+    guerre = d; erreur = ''; horsLigne = false;
+  } catch (e) {
+    horsLigne = e instanceof TypeError; // le navigateur n'a pas pu joindre le serveur du chef
+    erreur = horsLigne ? 'Connexion au serveur impossible : vérifie que le PC et le serveur sont allumés.' : e.message;
+  }
+  rendre();
+}
+setInterval(() => { if (!document.hidden) charger(); }, 30000); // page cachée : on ne sollicite pas le serveur (retour sur la page = mise à jour)
+setInterval(majChrono, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) charger(); });
+charger();
+</script>
+</body>
+</html>

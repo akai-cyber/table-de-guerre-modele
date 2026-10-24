@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17508A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Guerre">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Tableau · Table de guerre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div><h1 class="t">Table de guerre</h1><small id="sous">Plan d’attaque en direct</small></div>
+  <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
+</header>
+<div id="chefPanel" hidden>
+  <form id="chefForm">
+    <input id="chefCode" type="password" placeholder="Code chef" autocomplete="current-password" aria-label="Code chef">
+    <button class="btn on" type="submit">Valider</button>
+  </form>
+  <p id="chefMsg" class="doux" role="status"></p>
+</div>
+
+<div class="bases" id="bases" role="group" aria-label="Bases ennemies"></div>
+
+<div class="outils" id="outils">
+  <div class="rang">
+    <button type="button" class="ic on" id="outil-pen" aria-label="Stylo" aria-pressed="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
+    <button type="button" class="ic" id="outil-arrow" aria-label="Flèche" aria-pressed="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19L19 5M10 5h9v9"/></svg></button>
+    <span class="sep"></span>
+    <button type="button" class="ic" id="annuler" aria-label="Annuler le dernier tracé"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7H5v4M5 11a8 8 0 1 1 3 7"/></svg></button>
+    <button type="button" class="ic" id="effacer" aria-label="Tout effacer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>
+    <button type="button" class="btn" id="charger">Capture</button>
+  </div>
+  <div class="rang" id="teintes"></div>
+  <input id="fichier" type="file" accept="image/*" hidden>
+</div>
+
+<div id="scene">
+  <img id="fond" alt="Base ennemie">
+  <canvas id="toile" role="img" aria-label="Dessins du chef sur la base ennemie"></canvas>
+  <div id="aide">En attente de la capture du chef.</div>
+</div>
+<div class="sous-scene">
+  <span class="badge" id="badge"></span>
+  <button type="button" class="btn" id="agrandir">Agrandir</button>
+</div>
+<p id="etat" class="doux"></p>
+<p id="astuce" class="doux">Tourne ton téléphone pour voir le plan en grand.</p>
+<p class="doux mention">This material is unofficial and is not endorsed by Supercell. For more information see Supercell’s Fan Content Policy: www.supercell.com/fan-content-policy.</p>
+<button type="button" class="ic" id="fermer" aria-label="Quitter le plein écran"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+
+<nav class="bas" aria-label="Navigation">
+  <a href="/">Guerre</a>
+  <a href="/board.html" class="on" aria-current="page">Tableau</a>
+  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></svg></a>
+</nav>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/common.js"></script>
+<script>
+initChef();
+
+const COULEURS = ['#FF5A4F', '#FFD23F', '#4DA3FF', '#46D98A', '#FFFFFF', '#C77DFF'];
+const NOMS = ['Rouge', 'Jaune', 'Bleu', 'Vert', 'Blanc', 'Violet'];
+const scene = $('scene'), fond = $('fond'), toile = $('toile'), ctx = toile.getContext('2d');
+const qs = new URLSearchParams(location.search);
+let base = /^[A-Za-z0-9_-]{1,20}$/.test(qs.get('base') || '') ? qs.get('base') : '1';
+let nbBases = Math.max(10, Number(base) || 0), infos = {};
+let outil = 'pen', couleur = COULEURS[0];
+let traits = [], enDirect = new Map(), courant = null, dernierEnvoi = 0;
+
+// --- Dessin (coordonnées entre 0 et 1 : le tracé reste aligné sur n'importe quel écran)
+function dessiner(s) {
+  const W = toile.width, H = toile.height;
+  const pts = s.points.map(([x, y]) => [x * W, y * H]);
+  ctx.strokeStyle = s.color; ctx.fillStyle = s.color;
+  ctx.lineWidth = Math.max(3, W * 0.005);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  if (s.type === 'arrow') {
+    const [x0, y0] = pts[0], [x1, y1] = pts[pts.length - 1];
+    ctx.lineTo(x1, y1); ctx.stroke();
+    if (pts.length < 2) return;
+    const a = Math.atan2(y1 - y0, x1 - x0), t = Math.max(14, W * 0.022);
+    ctx.beginPath(); ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 - t * Math.cos(a - 0.45), y1 - t * Math.sin(a - 0.45));
+    ctx.lineTo(x1 - t * Math.cos(a + 0.45), y1 - t * Math.sin(a + 0.45));
+    ctx.closePath(); ctx.fill();
+  } else {
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.stroke();
+  }
+}
+function rendre() {
+  ctx.clearRect(0, 0, toile.width, toile.height);
+  traits.forEach(dessiner);
+  enDirect.forEach(dessiner);
+  if (courant && courant.points.length > 1) dessiner(courant);
+}
+function ajuster() {
+  const r = scene.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  toile.width = Math.round(r.width * d); toile.height = Math.round(r.height * d);
+  rendre();
+}
+new ResizeObserver(ajuster).observe(scene);
+
+function definirImage(src) {
+  if (!src) {
+    fond.style.display = 'none'; fond.removeAttribute('src');
+    scene.style.removeProperty('--ratio'); // retour au format 16/9 par défaut
+    $('aide').style.display = 'grid';
+    $('aide').textContent = estChef ? 'Charge la capture de la base ennemie pour commencer à dessiner.' : 'En attente de la capture du chef.';
+    return;
+  }
+  const im = new Image();
+  im.onload = () => {
+    scene.style.setProperty('--ratio', String(im.naturalWidth / im.naturalHeight));
+    fond.src = src; fond.style.display = 'block';
+    $('aide').style.display = 'none';
+  };
+  im.src = src;
+}
+function appliquerEtat(st) {
+  traits = st.strokes; enDirect.clear();
+  definirImage(st.image); rendre();
+}
+
+// --- Saisie (le chef seulement, le serveur vérifie aussi)
+const borne = (n) => Math.min(1, Math.max(0, n));
+function position(e) {
+  const r = toile.getBoundingClientRect();
+  return [borne((e.clientX - r.left) / r.width), borne((e.clientY - r.top) / r.height)];
+}
+function envoyerDirect() {
+  const t = Date.now();
+  if (t - dernierEnvoi < 40) return;
+  dernierEnvoi = t; socket.emit('live', courant);
+}
+function terminer() {
+  if (!courant) return;
+  const s = courant; courant = null;
+  if (s.points.length >= 2) socket.emit('stroke', s);
+  rendre();
+}
+toile.addEventListener('pointerdown', (e) => {
+  if (!estChef) return;
+  toile.setPointerCapture(e.pointerId);
+  courant = { type: outil, color: couleur, points: [position(e)] };
+});
+toile.addEventListener('pointermove', (e) => {
+  if (!courant) return;
+  const p = position(e);
+  if (outil === 'arrow') courant.points = [courant.points[0], p];
+  else {
+    const q = courant.points[courant.points.length - 1];
+    if (Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.002) return;
+    courant.points.push(p);
+    if (courant.points.length >= 1900) { terminer(); return; }
+  }
+  envoyerDirect(); rendre();
+});
+toile.addEventListener('pointerup', terminer);
+toile.addEventListener('pointercancel', terminer);
+
+// --- Outils
+COULEURS.forEach((c, i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'sw' + (i === 0 ? ' on' : '');
+  b.setAttribute('aria-label', NOMS[i]);
+  b.setAttribute('aria-pressed', String(i === 0));
+  b.innerHTML = '<i style="background:' + c + '"></i>';
+  b.onclick = () => {
+    couleur = c;
+    document.querySelectorAll('.sw').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+  };
+  $('teintes').appendChild(b);
+});
+['pen', 'arrow'].forEach((o) => {
+  $('outil-' + o).onclick = () => {
+    outil = o;
+    ['pen', 'arrow'].forEach((x) => {
+      $('outil-' + x).classList.toggle('on', x === o);
+      $('outil-' + x).setAttribute('aria-pressed', String(x === o));
+    });
+  };
+});
+// --- Plein écran : la capture prend tout l'écran (tourne le téléphone pour l'agrandir encore)
+function pleinEcran(on) {
+  if (on === document.body.classList.contains('plein')) return;
+  document.body.classList.toggle('plein', on);
+  if (on) history.pushState({ plein: 1 }, '');
+  else if (history.state && history.state.plein) history.back(); // le bouton « retour » du téléphone ferme aussi le plein écran
+}
+$('agrandir').onclick = () => pleinEcran(true);
+$('fermer').onclick = () => pleinEcran(false);
+window.addEventListener('popstate', () => document.body.classList.remove('plein'));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') pleinEcran(false); });
+
+$('annuler').onclick = () => socket.emit('undo');
+$('effacer').onclick = () => { if (confirm('Tout effacer sur la base ' + base + ' ?')) socket.emit('clear'); };
+$('charger').onclick = () => $('fichier').click();
+// La capture est réduite (1280 px de large au plus) puis compressée en JPEG. Si elle reste trop lourde pour le serveur,
+// on baisse d'abord la qualité, puis la taille.
+const IMAGE_MAX = 1700000; // caractères du texte envoyé (le serveur Cloudflare en accepte 1,9 million)
+function encoderImage(im) {
+  let k = Math.min(1, 1280 / im.naturalWidth), q = 0.8;
+  for (let i = 0; i < 8; i++) {
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    const d = c.toDataURL('image/jpeg', q);
+    if (d.startsWith('data:image/jpeg') && d.length <= IMAGE_MAX) return d; // un canevas trop grand donne « data:, » : on réduit encore
+    if (q > 0.5) q -= 0.15; else k *= 0.75;
+  }
+  return null;
+}
+$('fichier').onchange = (e) => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  const url = URL.createObjectURL(f), im = new Image();
+  im.onload = () => {
+    const d = encoderImage(im);
+    URL.revokeObjectURL(url);
+    if (d) socket.emit('image', d);
+    else $('etat').textContent = 'Cette capture est trop lourde : choisis-en une plus petite.';
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); $('etat').textContent = 'Impossible de lire cette image.'; };
+  im.src = url;
+};
+
+function majOutils() {
+  $('outils').classList.toggle('visible', estChef);
+  toile.style.touchAction = estChef ? 'none' : 'auto';
+  $('etat').textContent = estChef ? 'Mode chef : dessine sur la base, les joueurs voient en direct.' : 'Tu vois le plan du chef en direct.';
+  if (!fond.getAttribute('src')) definirImage(null);
+}
+document.addEventListener('chef', majOutils);
+
+// --- Choix de la base
+function majBadge() { $('badge').textContent = 'Base ' + base + (infos[base] ? ' · HDV ' + infos[base].th : ''); }
+function rendreBases() {
+  const box = $('bases');
+  box.innerHTML = Array.from({ length: nbBases }, (_, i) => {
+    const n = String(i + 1), on = n === base;
+    return '<button type="button" class="n' + (on ? ' on' : '') + '" data-base="' + n + '" aria-label="Base ' + n + '" aria-pressed="' + on + '">' + n + '</button>';
+  }).join('');
+  const actif = box.querySelector('.on');
+  if (actif) actif.scrollIntoView({ block: 'nearest', inline: 'center' });
+}
+$('bases').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-base]');
+  if (!b) return;
+  base = b.dataset.base; courant = null;
+  history.replaceState(null, '', '?base=' + base);
+  rendreBases(); majBadge(); rejoindre();
+});
+
+// --- Connexion
+function rejoindre() {
+  socket.emit('join', { target: base, code: store.get('cb_chef') || '' }, (res) => {
+    if (!res || !res.ok) { $('etat').textContent = (res && res.error) || 'Connexion impossible.'; return; }
+    estChef = res.chef;
+    majOutils();
+    appliquerEtat(res.state);
+  });
+}
+socket.on('connect', rejoindre); // aussi à chaque reconnexion
+if (socket.connected) rejoindre();
+
+socket.on('state', appliquerEtat);
+socket.on('strokes', (liste) => { traits = liste; enDirect.clear(); rendre(); });
+socket.on('stroke', (s) => { enDirect.delete(s.by); traits.push(s); rendre(); });
+socket.on('live', ({ id, stroke }) => { enDirect.set(id, stroke); rendre(); });
+socket.on('live-end', (id) => { enDirect.delete(id); rendre(); });
+
+// Nombre de bases et HDV adverses : repris de la guerre en cours si l'API est configurée.
+fetch('/api/war').then((r) => r.json()).then((g) => {
+  if (!g || !g.opponent) return;
+  nbBases = Math.max(g.teamSize || 0, g.opponent.members.length, Number(base) || 0, 1);
+  g.opponent.members.forEach((o) => { infos[String(o.pos)] = o; });
+  rendreBases(); majBadge();
+}).catch(() => {});
+rendreBases(); majBadge(); majOutils();
+</script>
+</body>
+</html>
