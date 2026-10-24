@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#15508A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Guerre">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Menu · Table de guerre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="blason" id="blason"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Chargement…</small></div>
+  <button class="btn carre sombre" id="infosBtn" type="button" aria-label="Informations du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg></button>
+  <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
+</header>
+<div id="chefPanel" hidden>
+  <form id="chefForm">
+    <input id="chefCode" type="password" placeholder="Code chef" autocomplete="current-password" aria-label="Code chef">
+    <button class="btn on" type="submit">Valider</button>
+  </form>
+  <p id="chefMsg" class="doux" role="status"></p>
+</div>
+
+<main>
+  <section class="panneau rubrique" aria-labelledby="tProfil">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-joueur"/></svg><h2 id="tProfil">Mon profil</h2></div>
+    <div id="profil"><div class="squelette" style="height:46px"></div></div>
+  </section>
+
+  <section class="panneau rubrique" aria-labelledby="tChef">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-couronne"/></svg><h2 id="tChef">Mode chef</h2></div>
+    <div id="chefZone"></div>
+  </section>
+
+  <section class="panneau rubrique" aria-labelledby="tClan">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-membres"/></svg><h2 id="tClan">Le clan</h2></div>
+    <a class="lien-menu" href="/dispos.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-panneau"/></svg><span>Signe / Non : disponibilités</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></a>
+    <a class="lien-menu" href="/"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-epees"/></svg><span>Guerre en cours et cibles</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></a>
+    <a class="lien-menu" href="/board.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-carte"/></svg><span>Tableau de dessin</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></a>
+    <button type="button" class="btn sombre" id="infosClan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg>Informations du clan</button>
+  </section>
+
+  <section class="panneau rubrique" id="zoneServeur" aria-labelledby="tServeur">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-serveur"/></svg><h2 id="tServeur">Serveur</h2></div>
+    <div id="serveur"></div>
+    <a class="btn sombre" href="tdg://serveur" id="menuServeur" hidden><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-serveur"/></svg>Changer de serveur (appli)</a>
+  </section>
+
+  <p class="doux mention">Table de guerre — appli de fan, non officielle.<br>This material is unofficial and is not endorsed by Supercell. For more information see Supercell’s Fan Content Policy: www.supercell.com/fan-content-policy.</p>
+</main>
+
+<nav class="bas" aria-label="Navigation">
+  <a href="/"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-epees"/></svg>Guerre</a>
+  <a href="/board.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-carte"/></svg>Tableau</a>
+  <a href="/dispos.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-panneau"/></svg>Dispos</a>
+  <a href="/menu.html" class="on" aria-current="page"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-menu"/></svg>Menu</a>
+  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-serveur"/></svg></a>
+</nav>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/common.js"></script>
+<script>
+initChef();
+chargerClan();
+if (DANS_APPLI) $('menuServeur').hidden = false;
+$('infosClan').onclick = infosClan;
+
+let statut = null, profil = null;
+async function charger() {
+  try { statut = await api('/api/status'); } catch (e) { statut = null; }
+  try { const d = await api('/api/dispos'); profil = d.moi; if (!d.moi) store.del('cb_session'); } catch (e) { profil = undefined; }
+  rendre();
+}
+function rendre() {
+  const p = $('profil');
+  if (profil === undefined) p.innerHTML = '<div class="err" role="alert">' + ico('alerte') + '<span>Serveur injoignable.</span></div>';
+  else if (profil) {
+    p.innerHTML = `<div class="message-info"><span class="rond-icone vert">${ico('check')}</span><div><b>${esc(profil.nom)}</b><small>${esc(profil.tag)} · ${profil.verifie ? 'identité vérifiée avec le jeton du jeu' : 'identité déclarée (non vérifiée)'}</small></div></div>
+      <button type="button" class="btn sombre" id="deco">${ico('sortie')}Se déconnecter sur cet appareil</button>`;
+    $('deco').onclick = async () => {
+      if (!await ui.confirmer('Te déconnecter sur cet appareil ? Tu devras t’identifier à nouveau pour répondre.', { ok: 'Déconnecter' })) return;
+      try { await api('/api/moi', { method: 'DELETE' }); } catch (e) { /* hors ligne */ }
+      store.del('cb_session'); ui.toast('Déconnecté.', 'ok'); charger();
+    };
+  } else {
+    p.innerHTML = `<div class="message-info"><span class="rond-icone or">${ico('joueur')}</span><div><b>Pas encore identifié</b><small>Identifie-toi depuis l’écran Signe / Non pour donner tes disponibilités.</small></div></div>
+      <a class="btn on" href="/dispos.html">${ico('panneau')}Aller à Signe / Non</a>`;
+  }
+  const c = $('chefZone');
+  if (statut && !statut.chef) c.innerHTML = '<p class="doux">Le mode chef n’est pas activé sur ce serveur (CHEF_CODE non renseigné).</p>';
+  else if (estChef) {
+    c.innerHTML = `<div class="message-info"><span class="rond-icone or">${ico('couronne')}</span><div><b>Mode chef actif</b><small>Tu peux assigner les cibles, dessiner les plans et gérer les périodes Signe / Non.</small></div></div><button type="button" class="btn sombre" id="quitterChef">${ico('sortie')}Quitter le mode chef</button>`;
+    $('quitterChef').onclick = quitterChef;
+  } else {
+    c.innerHTML = `<p class="doux">Réservé au chef et à ses adjoints : saisis le code chef pour gérer la guerre et les disponibilités.</p><button type="button" class="btn on" id="activerChef">${ico('cle')}Entrer le code chef</button>`;
+    $('activerChef').onclick = () => { window.scrollTo(0, 0); ouvrirChef(); };
+  }
+  const s = $('serveur');
+  if (!statut) { s.innerHTML = '<p class="doux">État du serveur indisponible.</p>'; return; }
+  const lignes = [
+    ['Adresse', esc(location.host)],
+    ['API Clash', statut.api ? 'clé configurée' : '<span class="k rouge">clé manquante</span>'],
+    ['Identité des membres', statut.identite === 'jeton' ? 'vérifiée (jeton du jeu)' : 'libre (non vérifiée)'],
+    ['Enregistrement', statut.stockage.type === 'upstash' ? 'base Upstash (durable)' : 'fichier local'],
+  ];
+  s.innerHTML = `<dl class="fiche">${lignes.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>` +
+    (statut.stockage.type !== 'upstash' && estChef ? `<div class="err" role="note">${ico('alerte')}<span>Sur un hébergeur gratuit (Render), le fichier local est effacé à chaque mise en veille ou mise à jour : les périodes et réponses seraient perdues. Configure une base Upstash gratuite (voir le README).</span></div>` : '') +
+    (!statut.stockage.ok ? `<div class="err" role="alert">${ico('alerte')}<span>Le dernier enregistrement a échoué.</span></div>` : '');
+}
+document.addEventListener('chef', rendre);
+charger();
+</script>
+</body>
+</html>

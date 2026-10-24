@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#15508A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Guerre">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Signe / Non · Table de guerre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="avec-actions">
+<header class="top">
+  <div class="blason" id="blason"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Chargement…</small></div>
+  <button class="btn carre sombre" id="infosBtn" type="button" aria-label="Informations du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg></button>
+  <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
+</header>
+<div id="chefPanel" hidden>
+  <form id="chefForm">
+    <input id="chefCode" type="password" placeholder="Code chef" autocomplete="current-password" aria-label="Code chef">
+    <button class="btn on" type="submit">Valider</button>
+  </form>
+  <p id="chefMsg" class="doux" role="status"></p>
+</div>
+
+<main>
+  <div id="erreur" hidden></div>
+
+  <!-- Carte principale : la période -->
+  <section class="panneau carte-dispo" aria-labelledby="titreDispo">
+    <div class="haut">
+      <svg class="ill" viewBox="0 0 120 112" aria-hidden="true"><use href="/icons.svg#ill-panneau"/></svg>
+      <div>
+        <h2 id="titreDispo">Signe / Non</h2>
+        <p>Indique si tu es disponible ou non pour les activités du clan.</p>
+      </div>
+    </div>
+    <div class="periode" id="periode"><div class="squelette" style="height:84px"></div></div>
+  </section>
+
+  <!-- Message d'état -->
+  <section class="panneau creux message-info" id="info" aria-live="polite"><div class="squelette" style="height:46px;width:100%"></div></section>
+
+  <!-- Statistiques -->
+  <section aria-label="Statistiques">
+    <div class="stats" id="stats">
+      <div class="panneau stat"><div class="squelette" style="height:58px;width:100%"></div></div>
+      <div class="panneau stat"><div class="squelette" style="height:58px;width:100%"></div></div>
+    </div>
+    <p class="resume-stats" id="resumeStats"></p>
+  </section>
+
+  <!-- Outils du chef -->
+  <section class="panneau outils-chef" id="outilsChef" hidden aria-labelledby="titreOutils">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-couronne"/></svg><h2 id="titreOutils">Outils du chef</h2></div>
+    <div class="grille" id="grilleChef"></div>
+  </section>
+
+  <!-- Liste des membres -->
+  <section class="panneau creux" aria-labelledby="titreListe">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-membres"/></svg><h2 id="titreListe">Liste des membres</h2></div>
+    <div class="onglets" id="filtres" role="tablist" aria-label="Filtrer les membres"></div>
+    <div class="recherche">
+      <label class="champ-ico"><span class="sr">Rechercher un joueur</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-recherche"/></svg><input id="recherche" type="search" placeholder="Rechercher un joueur" autocomplete="off"></label>
+      <select id="tri" aria-label="Trier la liste">
+        <option value="rang">Rang du clan</option>
+        <option value="nom">Nom</option>
+        <option value="recent">Réponse récente</option>
+        <option value="role">Rôle</option>
+      </select>
+    </div>
+    <ul class="liste liste-membres" id="membres" aria-live="polite"></ul>
+  </section>
+
+  <p class="doux mention">This material is unofficial and is not endorsed by Supercell. For more information see Supercell’s Fan Content Policy: www.supercell.com/fan-content-policy.</p>
+</main>
+
+<div class="barre-actions" id="actions"><div class="dedans" id="actionsDedans"></div></div>
+
+<nav class="bas" aria-label="Navigation">
+  <a href="/"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-epees"/></svg>Guerre</a>
+  <a href="/board.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-carte"/></svg>Tableau</a>
+  <a href="/dispos.html" class="on" aria-current="page"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-panneau"/></svg>Dispos</a>
+  <a href="/menu.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-menu"/></svg>Menu</a>
+  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-serveur"/></svg></a>
+</nav>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/common.js"></script>
+<script src="/dispos.js"></script>
+</body>
+</html>

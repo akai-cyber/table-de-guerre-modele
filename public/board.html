@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#17508A">
+<meta name="theme-color" content="#15508A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Guerre">
@@ -18,7 +18,9 @@
 </head>
 <body>
 <header class="top">
-  <div><h1 class="t">Table de guerre</h1><small id="sous">Plan d’attaque en direct</small></div>
+  <div class="blason" id="blason"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Plan d’attaque en direct</small></div>
+  <button class="btn carre sombre" id="infosBtn" type="button" aria-label="Informations du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg></button>
   <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
 </header>
 <div id="chefPanel" hidden>
@@ -38,7 +40,7 @@
     <span class="sep"></span>
     <button type="button" class="ic" id="annuler" aria-label="Annuler le dernier tracé"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7H5v4M5 11a8 8 0 1 1 3 7"/></svg></button>
     <button type="button" class="ic" id="effacer" aria-label="Tout effacer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>
-    <button type="button" class="btn" id="charger">Capture</button>
+    <button type="button" class="btn on" id="charger"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-image"/></svg>Capture</button>
   </div>
   <div class="rang" id="teintes"></div>
   <input id="fichier" type="file" accept="image/*" hidden>
@@ -51,7 +53,7 @@
 </div>
 <div class="sous-scene">
   <span class="badge" id="badge"></span>
-  <button type="button" class="btn" id="agrandir">Agrandir</button>
+  <button type="button" class="btn" id="agrandir"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-agrandir"/></svg>Agrandir</button>
 </div>
 <p id="etat" class="doux"></p>
 <p id="astuce" class="doux">Tourne ton téléphone pour voir le plan en grand.</p>
@@ -59,15 +61,18 @@
 <button type="button" class="ic" id="fermer" aria-label="Quitter le plein écran"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 
 <nav class="bas" aria-label="Navigation">
-  <a href="/">Guerre</a>
-  <a href="/board.html" class="on" aria-current="page">Tableau</a>
-  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></svg></a>
+  <a href="/"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-epees"/></svg>Guerre</a>
+  <a href="/board.html" class="on" aria-current="page"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-carte"/></svg>Tableau</a>
+  <a href="/dispos.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-panneau"/></svg>Dispos</a>
+  <a href="/menu.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-menu"/></svg>Menu</a>
+  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-serveur"/></svg></a>
 </nav>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/common.js"></script>
 <script>
 initChef();
+chargerClan(false);
 
 const COULEURS = ['#FF5A4F', '#FFD23F', '#4DA3FF', '#46D98A', '#FFFFFF', '#C77DFF'];
 const NOMS = ['Rouge', 'Jaune', 'Bleu', 'Vert', 'Blanc', 'Violet'];
@@ -207,7 +212,7 @@ window.addEventListener('popstate', () => document.body.classList.remove('plein'
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') pleinEcran(false); });
 
 $('annuler').onclick = () => socket.emit('undo');
-$('effacer').onclick = () => { if (confirm('Tout effacer sur la base ' + base + ' ?')) socket.emit('clear'); };
+$('effacer').onclick = async () => { if (await ui.confirmer('Tout effacer sur la base ' + base + ' ?', { ok: 'Effacer', danger: true, titre: 'Tout effacer' })) socket.emit('clear'); };
 $('charger').onclick = () => $('fichier').click();
 // La capture est réduite (1280 px de large au plus) puis compressée en JPEG. Si elle reste trop lourde pour le serveur,
 // on baisse d'abord la qualité, puis la taille.

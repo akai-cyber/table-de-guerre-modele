@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#17508A">
+<meta name="theme-color" content="#15508A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Guerre">
@@ -18,7 +18,9 @@
 </head>
 <body>
 <header class="top">
-  <div><h1 class="t">Table de guerre</h1><small id="sous">Chargement…</small></div>
+  <div class="blason" id="blason"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Chargement…</small></div>
+  <button class="btn carre sombre" id="infosBtn" type="button" aria-label="Informations du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg></button>
   <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
 </header>
 <div id="chefPanel" hidden>
@@ -31,30 +33,33 @@
 
 <main>
   <section id="resume"></section>
-  <section id="moi" class="card" hidden>
+  <section id="moi" class="panneau" hidden>
     <label for="moiSel" class="doux">Je suis…</label>
     <select id="moiSel"></select>
     <div id="moiInfo"></div>
   </section>
   <div class="seg" id="seg"></div>
   <div class="seg" id="chefOutils" hidden>
-    <button type="button" class="btn" id="enFace">Tous en face</button>
-    <button type="button" class="btn" id="toutRetirer">Tout retirer</button>
+    <button type="button" class="btn" id="enFace"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-cible"/></svg>Tous en face</button>
+    <button type="button" class="btn rouge" id="toutRetirer"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-poubelle"/></svg>Tout retirer</button>
   </div>
   <ul class="liste" id="liste"></ul>
   <p class="doux mention">This material is unofficial and is not endorsed by Supercell. For more information see Supercell’s Fan Content Policy: www.supercell.com/fan-content-policy.</p>
 </main>
 
 <nav class="bas" aria-label="Navigation">
-  <a href="/" class="on" aria-current="page">Guerre</a>
-  <a href="/board.html">Tableau</a>
-  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></svg></a>
+  <a href="/" class="on" aria-current="page"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-epees"/></svg>Guerre</a>
+  <a href="/board.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-carte"/></svg>Tableau</a>
+  <a href="/dispos.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-panneau"/></svg>Dispos</a>
+  <a href="/menu.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-menu"/></svg>Menu</a>
+  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-serveur"/></svg></a>
 </nav>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/common.js"></script>
 <script>
 initChef();
+chargerClan(false);
 
 let guerre = null, erreur = '', horsLigne = false, assign = {}, vue = 'membres', moi = store.get('cb_moi') || '', rerendre = false;
 
@@ -65,13 +70,6 @@ const tdate = (s) => {
   const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/.exec(s || '');
   return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : NaN;
 };
-const duree = (ms) => {
-  const min = Math.max(0, Math.floor(ms / 60000)), h = Math.floor(min / 60), j = Math.floor(h / 24);
-  if (j) return `${j} j ${h % 24} h`;
-  if (h) return `${h} h ${String(min % 60).padStart(2, '0')}`;
-  return `${min} min`;
-};
-
 const membre = (tag) => guerre && guerre.clan.members.find((m) => m.tag === tag);
 const adverse = (pos) => guerre && guerre.opponent.members.find((m) => m.pos === pos);
 const posAdverse = (tag) => { const o = guerre.opponent.members.find((m) => m.tag === tag); return o ? o.pos : null; };
@@ -105,21 +103,21 @@ function majSous() {
 
 function rendreResume() {
   const g = guerre;
-  let html = erreur ? `<div class="err" role="alert">${esc(erreur)}</div>` : '';
+  let html = erreur ? `<div class="err" role="alert">${ico('alerte')}<span>${esc(erreur)}</span></div>` : '';
   if (!g) {
-    if (!erreur) html = '<div class="card">Chargement de la guerre…</div>';
+    if (!erreur) html = '<div class="card"><div class="squelette" style="height:96px"></div></div>';
   } else if (g.state === 'notInWar') {
-    html += '<div class="card"><b>Pas de guerre en cours.</b><br><small>La page se met à jour toute seule quand la préparation commence.</small></div>';
+    html += `<div class="panneau creux message-info"><span class="rond-icone bleu">${ico('epees')}</span><div><b>Pas de guerre en cours</b><small>La page se met à jour toute seule quand la préparation commence.</small></div></div>`;
   } else {
     const p = phase(g);
     html += `<div class="card">
       <div class="duel">
         <div><div class="nom">${esc(g.clan.name)}</div><div class="gros">${g.clan.stars} ★</div><small>${pct(g.clan.pct)} %</small></div>
-        <div class="t" aria-hidden="true">VS</div>
+        <div class="vs" aria-hidden="true">VS</div>
         <div class="droite"><div class="nom">${esc(g.opponent.name)}</div><div class="gros">${g.opponent.stars} ★</div><small>${pct(g.opponent.pct)} %</small></div>
       </div>
       <div class="ligne"><span class="k ${p.cls}">${esc(p.texte)}</span><small id="chrono"></small></div>
-      ${g.state === 'preparation' ? '' : `<div class="ligne"><small>Attaques utilisées : ${g.clan.attacks} / ${g.teamSize * g.attacksPerMember}</small></div>`}
+      ${g.state === 'preparation' ? '' : `<div class="ligne"><small>Attaques utilisées : ${g.clan.attacks} / ${g.teamSize * g.attacksPerMember}</small></div><div class="barre" aria-hidden="true"><i style="width:${Math.min(100, Math.round(100 * g.clan.attacks / Math.max(1, g.teamSize * g.attacksPerMember)))}%"></i></div>`}
     </div>`;
   }
   $('resume').innerHTML = html;
@@ -139,7 +137,7 @@ function rendreMoi() {
   if (m) {
     const b = assign[m.tag], o = b && adverse(b), restantes = Math.max(0, g.attacksPerMember - m.attacks.length);
     html = b
-      ? `<div class="etat">Ta cible : <b>Base ${b}</b>${o ? ` (HDV ${o.th})` : ''} <a class="k or" href="/board.html?base=${b}">Voir le plan</a></div>`
+      ? `<div class="etat">${ico('cible')} Ta cible : <b>Base ${b}</b>${o ? ` (HDV ${o.th})` : ''} <a class="k or" href="/board.html?base=${b}">Voir le plan</a></div>`
       : '<div class="etat">Le chef ne t’a pas encore donné de cible.</div>';
     if (g.state === 'inWar') {
       html += `<small>${restantes ? `Il te reste ${restantes} attaque${restantes > 1 ? 's' : ''}.` : 'Tu as utilisé toutes tes attaques.'}</small>`;
@@ -174,7 +172,7 @@ function ligneMembre(m) {
   } else if (cible) {
     action = `<a class="k or" href="/board.html?base=${cible}">Base ${cible}</a>`;
   }
-  return `<li class="r${m.tag === moi ? ' moi' : ''}"><span class="pos">${m.pos}</span><div class="info"><b>${esc(m.name)}</b><small>HDV ${m.th}${detail ? ' · ' + esc(detail) : ''}</small></div>${puce}${action}</li>`;
+  return `<li class="r${m.tag === moi ? ' moi' : ''}"><span class="pos">${m.pos}</span>${bouclier(m.th)}<div class="info"><b>${esc(m.name)}</b><small>HDV ${m.th}${detail ? ' · ' + esc(detail) : ''}</small></div>${puce}${action}</li>`;
 }
 
 function ligneCible(o) {
@@ -187,7 +185,7 @@ function ligneCible(o) {
   if (attaquants.length) infos.push('attaquée par ' + attaquants.join(', '));
   else if (g.state === 'inWar') infos.push('intacte');
   const cls = s >= 3 ? 'vert' : s === 2 ? 'or' : '';
-  return `<li class="r"><span class="pos">${o.pos}</span><div class="info"><b>${esc(o.name)}</b><small>${esc(infos.join(' · '))}</small></div><span class="k ${cls}">${etoiles(s)} ${pct(p)} %</span><a class="k" href="/board.html?base=${o.pos}">Plan</a></li>`;
+  return `<li class="r"><span class="pos">${o.pos}</span>${bouclier(o.th)}<div class="info"><b>${esc(o.name)}</b><small>${esc(infos.join(' · '))}</small></div><span class="k ${cls}">${etoiles(s)} ${pct(p)} %</span><a class="k" href="/board.html?base=${o.pos}">${ico('carte')}Plan</a></li>`;
 }
 
 function majChefOutils() {
@@ -227,13 +225,13 @@ $('liste').addEventListener('change', (e) => {
   socket.emit('assign', { tag: s.dataset.assign, target: s.value ? Number(s.value) : null });
 });
 // Raccourcis du chef : chacun attaque la base de son numéro (1 contre 1, 2 contre 2…), ou on repart de zéro.
-$('enFace').addEventListener('click', () => {
+$('enFace').addEventListener('click', async () => {
   if (!estChef || !guerre) return;
-  if (Object.keys(assign).length && !confirm('Remplacer les cibles actuelles : chacun attaque la base de son numéro ?')) return;
+  if (Object.keys(assign).length && !await ui.confirmer('Remplacer les cibles actuelles : chacun attaque la base de son numéro ?', { ok: 'Remplacer', titre: 'Tous en face' })) return;
   guerre.clan.members.forEach((m) => socket.emit('assign', { tag: m.tag, target: adverse(m.pos) ? m.pos : null }));
 });
-$('toutRetirer').addEventListener('click', () => {
-  if (estChef && Object.keys(assign).length && confirm('Retirer toutes les cibles ?')) socket.emit('assign-reset');
+$('toutRetirer').addEventListener('click', async () => {
+  if (estChef && Object.keys(assign).length && await ui.confirmer('Retirer toutes les cibles ?', { ok: 'Tout retirer', danger: true, titre: 'Tout retirer' })) socket.emit('assign-reset');
 });
 $('liste').addEventListener('focusout', () => {
   if (rerendre) { rerendre = false; setTimeout(rendreListe, 0); }
