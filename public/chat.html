@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070B14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Guerre">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Chat · Table de guerre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="page-chat">
+<header class="top">
+  <div class="blason" id="blason" role="button" tabindex="0" aria-label="Informations du clan"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Chargement…</small></div>
+  <a class="btn carre sombre" id="chatBtn" href="/chat.html" aria-label="Chat du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-message"/></svg><span class="pastille-nb" id="chatNb" hidden></span></a>
+  <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
+</header>
+<div id="chefPanel" hidden>
+  <form id="chefForm">
+    <input id="chefCode" type="password" placeholder="Code chef" autocomplete="current-password" aria-label="Code chef">
+    <button class="btn on" type="submit">Valider</button>
+  </form>
+  <p id="chefMsg" class="doux" role="status"></p>
+</div>
+
+<main>
+  <section class="panneau creux" aria-labelledby="tChat">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-message"/></svg><h2 id="tChat">Chat du clan</h2>
+      <a class="btn petit sombre droite" id="ouvrirClash" href="#"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-ouvrir"/></svg>Clash</a></div>
+    <p class="doux" style="margin:0 0 10px">Messages entre membres de l’appli. Les <b style="color:var(--or-clair)">annonces du chef</b> arrivent aussi en notification sur les téléphones (et sur Discord si configuré). Pour le chat du jeu : « Copier et ouvrir Clash ».</p>
+    <ol class="fil" id="fil" aria-live="polite"><li class="squelette" style="height:60px"></li></ol>
+  </section>
+</main>
+
+<div class="barre-actions compositeur" id="compositeur">
+  <div class="dedans">
+    <div id="zoneSaisie" style="flex:1;display:grid;gap:6px">
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <label class="sr" for="texte">Message</label>
+        <textarea id="texte" rows="1" maxlength="500" placeholder="Écris au clan…" style="min-height:46px;resize:none"></textarea>
+        <button type="button" class="btn carre sombre" id="copierClash" aria-label="Copier et ouvrir Clash"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-ouvrir"/></svg></button>
+        <button type="button" class="btn carre on" id="envoyer" aria-label="Envoyer"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-envoyer"/></svg></button>
+      </div>
+      <label class="doux" id="choixAnnonce" hidden style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="annonce" style="width:20px;min-height:20px"> Annonce du chef (notification à tous + Discord)</label>
+    </div>
+    <p class="note" id="pasIdentifie" hidden>Identifie-toi dans <a href="/dispos.html">Signe / Non</a> pour écrire.</p>
+  </div>
+</div>
+
+<nav class="bas" aria-label="Navigation">
+  <a href="/"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-epees"/></svg>Guerre</a>
+  <a href="/board.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-carte"/></svg>Tableau</a>
+  <a href="/stats.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-stats"/></svg>Stats</a>
+  <a href="/dispos.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-panneau"/></svg>Dispos</a>
+  <a href="/menu.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-menu"/></svg>Menu</a>
+  <a href="tdg://serveur" id="appServeur" class="srv" aria-label="Changer de serveur" hidden><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-serveur"/></svg></a>
+</nav>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/common.js"></script>
+<script src="/chat.js"></script>
+</body>
+</html>

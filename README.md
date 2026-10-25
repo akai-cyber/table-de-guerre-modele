@@ -6,7 +6,12 @@ Appli web (et appli Android) pour un clan Clash of Clans :
 - **Tableau** : le chef dessine le plan d'attaque sur la capture d'une base, les joueurs le voient en direct.
 - **Stats** : bilan du clan, classement des joueurs (note sur 100), historique des guerres, compos qui marchent ; fiche de chaque joueur (héros, engins de siège, familiers, attaques).
 - **Dispos (Signe / Non)** : le chef ouvre une période, chaque membre dit s'il est disponible ; statistiques, filtres, historique.
-- **Menu** : profil, mode chef, informations du clan, état du serveur.
+- **Chat** : messages entre membres identifiés ; **annonces du chef** envoyées en notification à tous (et sur Discord).
+- **Notifications** (Chrome / appli installée depuis Chrome) : préparation et début de guerre, rappels d'attaques 4 h et 1 h
+  avant la fin (personnels), résultats, Signe / Non, raids du Capital, annonces.
+- **Raids du Capital**, **activité** des membres (chef : inactifs, dons, Jeux de clan, arrivées/départs), **ligue de guerre**
+  (classement du groupe), **repérage** de l'adversaire avec **proposition de cibles**, **lien d'armée** → compo automatique.
+- **Menu** : profil, notifications, saison (Pass or), mode chef, informations du clan, état du serveur.
 
 ## Variables d'environnement (Render → Environment)
 
@@ -18,6 +23,8 @@ Appli web (et appli Android) pour un clan Clash of Clans :
 | `CHEF_CODE` | oui | Code du mode chef (8 caractères ou plus) |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | **fortement conseillé** | Enregistrement durable (voir plus bas) |
 | `IDENTITE` | non | `jeton` (défaut) ou `libre` |
+| `DISCORD_WEBHOOK_URL` | non | Webhook d'un salon Discord : annonces, débuts/résultats de guerre, arrivées/départs |
+| `VAPID_CONTACT` | non | Contact (mailto:) pour les notifications push |
 
 ## Enregistrement durable (important sur Render gratuit)
 
@@ -64,13 +71,23 @@ Le chef (code chef) peut saisir ou corriger la réponse d'un membre : c'est affi
   `POST /api/dispos/periodes/:id/cloture`, `DELETE /api/dispos/periodes/:id`,
   `PUT /api/dispos/periodes/:id/reponses/:tag`, `GET /api/dispos/periodes/:id/export.csv`
 
+- `GET /api/raids`, `GET /api/activite` (chef), `GET /api/ldc`, `GET /api/reperage`, `GET /api/saison`, `POST /api/armee` `{lien}`
+- `GET|POST /api/chat`, `DELETE /api/chat/:id` (chef), `GET /api/notifs`, `POST|PATCH|DELETE /api/notifs/abonnement`, `POST /api/notifs/test`
 - `GET /api/guerres`, `GET /api/guerres/:id`, `GET /api/stats?derniers=&type=c|l`, `GET /api/joueurs/:tag`,
   `PUT /api/guerres/:id/compo` `{tag, ordre, compo}` (joueur lui-même ou chef)
 
+## Pourquoi pas d'envoi direct dans le chat du jeu ?
+
+L'API officielle ne permet pas d'écrire dans le chat de clan. Le seul moyen serait un robot qui pilote un compte,
+interdit par les conditions de Supercell (risque de bannissement) : l'appli ne le fait pas. À la place :
+annonces en notification + Discord, et bouton « Copier et ouvrir Clash » (le message est copié, le jeu s'ouvre sur le clan).
+
+Les identifiants des troupes du lien d'armée viennent des données statiques de la bibliothèque clashofclans.js (licence MIT).
+
 ## Limites connues
 
-- Pas de notification dans le jeu : le « Rappel » prépare un message à copier ou partager.
-- Pas de chat intégré (le bouton d'en-tête ouvre les informations du clan).
+- Les notifications ne marchent pas dans l'appli Android (WebView) : passer par Chrome (« Installer l'appli »).
+- Pas de dernière connexion dans l'API : l'activité est déduite des compteurs (dons, trophées, attaques, Jeux de clan).
 - Les dessins du tableau restent en mémoire (perdus au redémarrage du serveur).
 - La version Cloudflare (branche `main`) n'a pas encore Signe / Non ni les statistiques.
 - Les illustrations officielles (héros, troupes) ne sont pas incluses : icônes originales seulement.

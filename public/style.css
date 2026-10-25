@@ -416,3 +416,29 @@ body.plein::before{content:'';position:fixed;inset:0;background:#000;z-index:25}
 @media (orientation:portrait){.plein #astuce{display:block;position:fixed;z-index:40;left:16px;right:16px;bottom:24px;margin:0;text-align:center}}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.pastille-nb{position:absolute;top:2px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--rouge);color:#fff;font:700 11px/18px var(--corps);text-align:center;box-shadow:0 0 0 2px var(--fond)}
+#chatBtn{position:relative;overflow:visible;clip-path:none;border-radius:8px}
+.blason[role=button]{cursor:pointer}
+/* Chat */
+.page-chat{padding-bottom:calc(var(--nav-h) + 120px + env(safe-area-inset-bottom))}
+.fil{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.msg{padding:10px 12px;border:1px solid var(--ligne);border-radius:8px;background:linear-gradient(90deg,rgba(25,39,64,.9),rgba(16,26,44,.9))}
+.msg.moi{border-color:rgba(51,209,255,.45);box-shadow:inset 3px 0 0 var(--cyan)}
+.msg.annonce{border-color:rgba(245,184,46,.6);box-shadow:inset 3px 0 0 var(--or),0 0 22px rgba(245,184,46,.1)}
+.msg-tete{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.msg-tete b{font:700 16px/1 var(--titre);letter-spacing:.03em}
+.msg-tete .ico{color:var(--or);width:18px;height:18px}
+.msg-actions{margin-left:auto;display:flex;gap:6px}
+.msg-actions .btn{min-height:32px;width:32px;--biseau:5px}
+.msg-actions .btn .ico{width:16px;height:16px;color:#fff}
+.msg p{margin:6px 0 0;white-space:normal;overflow-wrap:anywhere}
+.compositeur .dedans{align-items:center}
+.onglets.six{flex-wrap:wrap}
+@media (max-width:480px){.onglets.six{grid-template-columns:repeat(3,1fr)}}
+.armee{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.armee .k{font-size:11px;padding:3px 7px}
+.compositeur textarea{flex:1;min-width:0;width:auto}
+.compositeur .dedans{flex-wrap:nowrap}
+.seg{grid-auto-columns:minmax(0,1fr)}
+.seg .btn{min-width:0;padding:0 6px;line-height:1.05;white-space:normal;text-align:center}
+@media (max-width:370px){.seg .btn{font-size:13px;letter-spacing:.03em;padding:0 3px}}

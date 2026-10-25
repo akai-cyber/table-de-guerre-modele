@@ -18,9 +18,9 @@
 </head>
 <body>
 <header class="top">
-  <div class="blason" id="blason"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="blason" id="blason" role="button" tabindex="0" aria-label="Informations du clan"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
   <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Chargement…</small></div>
-  <button class="btn carre sombre" id="infosBtn" type="button" aria-label="Informations du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg></button>
+  <a class="btn carre sombre" id="chatBtn" href="/chat.html" aria-label="Chat du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-message"/></svg><span class="pastille-nb" id="chatNb" hidden></span></a>
   <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
 </header>
 <div id="chefPanel" hidden>
@@ -42,10 +42,22 @@
     <div id="chefZone"></div>
   </section>
 
+  <section class="panneau rubrique" aria-labelledby="tNotifs">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-cloche"/></svg><h2 id="tNotifs">Notifications</h2></div>
+    <div id="notifsZone"><div class="squelette" style="height:46px"></div></div>
+  </section>
+
+  <section class="panneau rubrique" aria-labelledby="tSaison">
+    <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-calendrier"/></svg><h2 id="tSaison">Saison</h2></div>
+    <div id="saison" class="doux">Chargement…</div>
+  </section>
+
   <section class="panneau rubrique" aria-labelledby="tClan">
     <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-membres"/></svg><h2 id="tClan">Le clan</h2></div>
     <a class="lien-menu" href="/dispos.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-panneau"/></svg><span>Signe / Non : disponibilités</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></a>
     <a class="lien-menu" href="/"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-epees"/></svg><span>Guerre en cours et cibles</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></a>
+    <a class="lien-menu" href="/chat.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-message"/></svg><span>Chat et annonces</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></a>
+    <a class="lien-menu" href="/stats.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-stats"/></svg><span>Stats, raids et activité</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></a>
     <a class="lien-menu" href="/board.html"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-carte"/></svg><span>Tableau de dessin</span><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></a>
     <button type="button" class="btn sombre" id="infosClan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg>Informations du clan</button>
   </section>
@@ -120,6 +132,45 @@ function rendre() {
 }
 document.addEventListener('chef', rendre);
 charger();
+
+// ---------- Notifications
+const LIB_NOTIFS = { guerre: 'Préparation et début de guerre', rappels: 'Rappels d’attaques (4 h et 1 h avant la fin)', resultats: 'Résultats de guerre', dispos: 'Signe / Non (ouverture, dernier jour)', raids: 'Raids du Capital', annonces: 'Annonces du chef' };
+async function rendreNotifs() {
+  const z = $('notifsZone');
+  let info = null;
+  try { info = await api('/api/notifs'); } catch (e) { z.innerHTML = '<p class="doux">Serveur injoignable.</p>'; return; }
+  if (!info.disponible) { z.innerHTML = '<p class="doux">Les notifications ne sont pas activées sur ce serveur.</p>'; return; }
+  if (DANS_APPLI || !notifs.prises()) {
+    z.innerHTML = `<p class="doux">${ico('info')} ${DANS_APPLI ? 'L’appli Android ne peut pas recevoir les notifications du navigateur.' : 'Ce navigateur ne gère pas les notifications.'} Ouvre <b>${esc(location.host)}</b> dans <b>Chrome</b>, puis menu ⋮ → <b>Installer l’appli</b> (ou « Ajouter à l’écran d’accueil »), et active-les ici.</p>`
+      + (info.discord ? `<p class="doux">${ico('check')} Les grands évènements sont aussi publiés sur le Discord du clan.</p>` : '');
+    return;
+  }
+  const sub = await notifs.abonnement();
+  let prefs = {}; try { prefs = JSON.parse(store.get('cb_notifs_prefs') || '{}'); } catch (e) { /* */ }
+  const cases = Object.entries(LIB_NOTIFS).map(([k, l]) => `<label class="doux" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-pref="${k}" ${prefs[k] === false ? '' : 'checked'} style="width:20px;min-height:20px"${sub ? '' : ' disabled'}> ${l}</label>`).join('');
+  z.innerHTML = (sub
+    ? `<div class="message-info"><span class="rond-icone vert">${ico('cloche')}</span><div><b>Notifications actives</b><small>${store.get('cb_session') ? 'Les rappels d’attaques te sont envoyés personnellement.' : 'Identifie-toi (Signe / Non) pour recevoir aussi tes rappels d’attaques personnels.'}</small></div></div>`
+    : `<p class="doux">Reçois les alertes de guerre, les rappels d’attaques et les annonces du chef sur ce téléphone.</p>`)
+    + `<div style="display:grid;gap:8px">${cases}</div>`
+    + `<div style="display:flex;gap:8px;flex-wrap:wrap">${sub ? `<button type="button" class="btn sombre" id="nTest">${ico('cloche')}Tester</button><button type="button" class="btn rouge" id="nOff">Désactiver</button>` : `<button type="button" class="btn on" id="nOn">${ico('cloche')}Activer les notifications</button>`}</div>`
+    + (info.discord ? `<p class="doux">${ico('check')} Discord du clan relié : annonces, débuts et résultats de guerre y sont publiés.</p>` : '');
+  const lirePrefs = () => Object.fromEntries([...z.querySelectorAll('[data-pref]')].map((c) => [c.dataset.pref, c.checked]));
+  if ($('nOn')) $('nOn').onclick = async () => { try { await notifs.activer(lirePrefs()); ui.toast('Notifications activées.', 'ok'); rendreNotifs(); } catch (e) { ui.toast(e.message, 'err'); } };
+  if ($('nOff')) $('nOff').onclick = async () => { await notifs.desactiver(); ui.toast('Notifications désactivées.'); rendreNotifs(); };
+  if ($('nTest')) $('nTest').onclick = async () => { try { await api('/api/notifs/test', { method: 'POST', body: { endpoint: sub.endpoint } }); ui.toast('Notification de test envoyée.', 'ok'); } catch (e) { ui.toast(e.message, 'err'); } };
+  z.querySelectorAll('[data-pref]').forEach((c) => { c.onchange = async () => {
+    const p = lirePrefs(); store.set('cb_notifs_prefs', JSON.stringify(p));
+    try { await api('/api/notifs/abonnement', { method: 'PATCH', body: { endpoint: sub.endpoint, prefs: p } }); } catch (e) { ui.toast(e.message, 'err'); }
+  }; });
+}
+async function rendreSaison() {
+  try {
+    const s = await api('/api/saison');
+    const j = Math.max(0, Math.ceil((Date.parse(s.fin) - Date.now()) / 864e5));
+    $('saison').innerHTML = `<div class="kpis"><div class="kpi"><small>Fin du Pass or</small><b class="or">${j} j</b></div><div class="kpi"><small>Le</small><b>${fmtJour(s.fin)}</b></div></div>`;
+  } catch (e) { $('saison').textContent = 'Saison indisponible.'; }
+}
+rendreNotifs(); rendreSaison();
 </script>
 </body>
 </html>

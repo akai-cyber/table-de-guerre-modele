@@ -18,9 +18,9 @@
 </head>
 <body>
 <header class="top">
-  <div class="blason" id="blason"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="blason" id="blason" role="button" tabindex="0" aria-label="Informations du clan"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
   <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Chargement…</small></div>
-  <button class="btn carre sombre" id="infosBtn" type="button" aria-label="Informations du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg></button>
+  <a class="btn carre sombre" id="chatBtn" href="/chat.html" aria-label="Chat du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-message"/></svg><span class="pastille-nb" id="chatNb" hidden></span></a>
   <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
 </header>
 <div id="chefPanel" hidden>
@@ -153,6 +153,7 @@ function rendreSeg() {
   const onglets = [['membres', 'Mon clan']];
   if (g.state === 'inWar') onglets.push(['restants', 'À attaquer']);
   onglets.push(['cibles', 'Cibles']);
+  if (g.state === 'preparation' || g.state === 'inWar') onglets.push(['reperage', 'Repérage']);
   if (!onglets.some(([k]) => k === vue)) vue = 'membres';
   seg.innerHTML = onglets.map(([k, l]) =>
     `<button type="button" class="btn${k === vue ? ' on' : ''}" data-vue="${k}" aria-pressed="${k === vue}">${l}</button>`).join('');
@@ -201,6 +202,7 @@ function rendreListe() {
   // Ne pas reconstruire la liste pendant que le chef choisit une cible (la liste se fermerait).
   const a = document.activeElement;
   if (a && a.tagName === 'SELECT' && ul.contains(a)) { rerendre = true; return; }
+  if (vue === 'reperage') { rendreReperage(); return; }
   let html;
   if (vue === 'cibles') {
     html = g.opponent.members.map(ligneCible).join('');
@@ -212,13 +214,50 @@ function rendreListe() {
   ul.innerHTML = html;
 }
 
+// ---------- Repérage : force des bases adverses, clan adverse, proposition de cibles pour le chef
+let reperage = null, reperageLe = 0, reperageCharge = false;
+async function chargerReperage(force) {
+  if (reperageCharge || (!force && reperage && Date.now() - reperageLe < 120000)) return;
+  reperageCharge = true;
+  try { reperage = await api('/api/reperage'); reperageLe = Date.now(); } catch (e) { reperage = { erreur: e.message }; }
+  reperageCharge = false;
+  if (vue === 'reperage') rendreReperage();
+}
+function rendreReperage() {
+  const ul = $('liste');
+  if (!reperage) { ul.innerHTML = '<li class="card"><div class="squelette" style="height:80px"></div><small>Analyse des 2 clans (profils des joueurs)…</small></li>'; chargerReperage(); return; }
+  if (reperage.erreur) { ul.innerHTML = `<li class="err">${ico('alerte')}<span>${esc(reperage.erreur)}</span></li>`; return; }
+  if (!reperage.guerre) { ul.innerHTML = '<li class="card">Pas de guerre à analyser.</li>'; return; }
+  const c = reperage.clanAdv, j = reperage.journalAdv;
+  let html = `<li class="panneau"><div class="entete-panneau">${ico('loupe-cible')}<h2>${esc(reperage.guerre.adv)}</h2></div>
+    <div class="kpis">${c ? `<div class="kpi"><small>Niveau du clan</small><b>${c.niveau}</b></div><div class="kpi"><small>Série de victoires</small><b class="${c.serie >= 3 ? 'rouge' : ''}">${c.serie}</b></div><div class="kpi"><small>Guerres gagnées</small><b>${c.victoires}</b></div><div class="kpi"><small>Ligue</small><b style="font-size:17px">${esc(c.ligue || '—')}</b></div>` : ''}
+    ${j ? `<div class="kpi"><small>10 dernières guerres</small><b>${j.victoires} V / ${j.guerres - j.victoires} D</b></div><div class="kpi"><small>★ moy. par guerre</small><b>${nombre(j.moyEtoiles)}</b></div>` : c && !c.journalPublic ? '<div class="kpi"><small>Journal de guerre</small><b style="font-size:17px">Privé</b></div>' : ''}</div></li>`;
+  if (estChef && reperage.plan.length) {
+    html += `<li class="panneau creux"><div class="entete-panneau">${ico('cible')}<h2>Proposition de cibles</h2></div>
+      <div class="defile"><table class="tableau"><thead><tr><th>Joueur</th><th class="num">Base</th><th>Pourquoi</th></tr></thead><tbody>${reperage.plan.map((p) => `<tr><td><b>${esc(p.nom)}</b></td><td class="num">${p.cible}</td><td><small>${esc(p.raison)}</small></td></tr>`).join('')}</tbody></table></div>
+      <small>Calcul : HDV × 100 + niveaux des héros × 3. Chacun vise la base la plus forte à sa portée ; les bases déjà à 3★ sont ignorées.</small>
+      <button type="button" class="btn on large" id="appliquerPlan" style="margin-top:10px">${ico('check')}Appliquer ces cibles</button></li>`;
+  }
+  const ligneBase = (o) => `<li class="r"><span class="pos">${o.pos}</span>${bouclier(o.th)}<div class="info"><b>${esc(o.nom)}</b>
+      <small>Héros ${o.heros || '—'} · ${nombre(o.etoilesGuerre, 0)} ★ de guerre${o.detailHeros.length ? ' · ' + o.detailHeros.map((h) => esc(h.nom.split(' ').map((m) => m[0]).join('')) + ' ' + h.niveau).join(' ') : ''}</small></div>
+      ${o.triplee ? '<span class="k vert">3★ fait</span>' : ''}<span class="note-badge" title="Force estimée">${nombre(o.force, 0)}</span></li>`;
+  html += `<li><h3 style="margin:6px 0">Bases adverses</h3></li>` + reperage.eux.map(ligneBase).join('');
+  ul.innerHTML = html;
+  const b = $('appliquerPlan');
+  if (b) b.onclick = async () => {
+    if (!await ui.confirmer(`Remplacer les cibles actuelles par les ${reperage.plan.length} cibles proposées ?`, { ok: 'Appliquer', titre: 'Proposition de cibles' })) return;
+    reperage.plan.forEach((p) => socket.emit('assign', { tag: p.tag, target: p.cible }));
+    ui.toast('Cibles appliquées : chaque joueur voit la sienne.', 'ok');
+  };
+}
+
 function rendre() { majSous(); rendreResume(); rendreMoi(); rendreSeg(); rendreListe(); }
 
 $('moiSel').addEventListener('change', (e) => { moi = e.target.value; store.set('cb_moi', moi); rendreMoi(); rendreListe(); });
 $('seg').addEventListener('click', (e) => {
   const b = e.target.closest('[data-vue]');
   if (!b) return;
-  vue = b.dataset.vue; rendreSeg(); rendreListe();
+  vue = b.dataset.vue; if (vue === 'reperage') chargerReperage(); rendreSeg(); rendreListe();
 });
 $('liste').addEventListener('change', (e) => {
   const s = e.target.closest('select[data-assign]');

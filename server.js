@@ -9,6 +9,17 @@ const { Server } = require('socket.io');
 const { creerStockage } = require('./lib/stockage');
 const D = require('./lib/dispos');
 const G = require('./lib/guerres');
+const A = require('./lib/activite');
+const R = require('./lib/raids');
+const L = require('./lib/ldc');
+const SC = require('./lib/scout');
+const N = require('./lib/notifs');
+const ARMEE = require('./lib/armee');
+let webpush = null;
+try { webpush = require('web-push'); } catch (e) { /* notifications push indisponibles */ }
+// NOTIFS_TEST (tests automatiques uniquement) autorise des adresses locales en http pour Discord et les notifications.
+const LOCAL_TEST = (u) => process.env.NOTIFS_TEST === '1' && /^http:\/\/127\.0\.0\.1:\d+\//.test(u || '');
+const DISCORD = /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(process.env.DISCORD_WEBHOOK_URL || '') || LOCAL_TEST(process.env.DISCORD_WEBHOOK_URL) ? process.env.DISCORD_WEBHOOK_URL : '';
 
 // Lecture du fichier .env. Les variables déjà définies ne sont pas écrasées (la démo et les tests s'en servent).
 // Piège connu : une valeur qui commence par # sans guillemets est prise pour un commentaire et devient vide.
@@ -62,6 +73,11 @@ let periodes = [];    // périodes « Signe / Non »
 let reponses = {};    // { idPériode: { '#TAG': { r: 'oui'|'non', le, par: 'membre'|'chef', nom } } }
 let sessions = {};    // { empreinte du jeton de session: { tag, nom, cree, vu } }
 let guerres = [];     // archives des guerres (classiques et ligue), pour l'historique et les statistiques
+let activite = A.nouvelEtat(); // relevés d'activité des membres
+let chat = [];        // messages du chat de l'appli
+let abonnements = []; // abonnements aux notifications { id, sub, tag, prefs, cree }
+let vapid = null;     // clés des notifications (créées une fois)
+let notifsEnvoyees = {}; // registre anti-doublon des notifications
 const MAX_GUERRES = 40;
 
 const stockage = creerStockage({
@@ -78,13 +94,18 @@ function appliquerDonnees(d) {
   if (d.reponses && typeof d.reponses === 'object') reponses = d.reponses;
   if (d.sessions && typeof d.sessions === 'object') sessions = d.sessions;
   if (Array.isArray(d.guerres)) guerres = d.guerres.filter((g) => g && typeof g.id === 'string' && Array.isArray(g.m));
+  if (d.activite && typeof d.activite === 'object' && d.activite.membres) activite = d.activite;
+  if (Array.isArray(d.chat)) chat = d.chat.slice(-300);
+  if (Array.isArray(d.abonnements)) abonnements = d.abonnements.filter((a) => a && a.sub && a.sub.endpoint);
+  if (d.vapid && d.vapid.publicKey) vapid = d.vapid;
+  if (d.notifsEnvoyees && typeof d.notifsEnvoyees === 'object') notifsEnvoyees = d.notifsEnvoyees;
   for (const [t, v] of Object.entries(assignments)) {
     if (!normTag(t) || !Number.isInteger(v) || v < 1 || v > 50) delete assignments[t];
   }
   const limite = Date.now() - SESSION_JOURS * D.JOUR;
   for (const [k, v] of Object.entries(sessions)) if (!v || Date.parse(v.vu || v.cree) < limite) delete sessions[k];
 }
-const save = () => stockage.enregistrer({ version: 3, warKey, assignments, periodes, reponses, sessions, guerres });
+const save = () => stockage.enregistrer({ version: 4, warKey, assignments, periodes, reponses, sessions, guerres, activite, chat, abonnements, vapid, notifsEnvoyees });
 
 // ---------- API Clash of Clans ----------
 // La clé reste sur le serveur : elle n'est jamais envoyée aux téléphones.
@@ -196,9 +217,76 @@ async function suivreLigue() {
   }
 }
 // Relève automatique toutes les 5 minutes tant que le serveur est réveillé.
+// ---------- Notifications (push + Discord) ----------
+let envoyeur = N.creerEnvoyeur({ discordUrl: DISCORD });
+// Appelé une fois les données chargées : les clés VAPID sont créées une seule fois puis réutilisées.
+function initNotifs() {
+  if (webpush && !vapid) { vapid = webpush.generateVAPIDKeys(); save(); }
+  envoyeur = N.creerEnvoyeur({ webpush, vapid, contact: process.env.VAPID_CONTACT, discordUrl: DISCORD,
+    retirer: (id) => { abonnements = abonnements.filter((a) => a.id !== id); save(); } });
+}
+async function notifier(evenements) {
+  const nouveaux = N.filtrerNouveaux(evenements, notifsEnvoyees);
+  if (!nouveaux.length) return [];
+  save();
+  for (const e of nouveaux) {
+    await envoyeur.pousser(abonnements, e);
+    if (e.discord) await envoyeur.discord(`**${e.titre}**\n${e.corps}`);
+  }
+  return nouveaux;
+}
+
+// Relevé de l'activité : liste des membres à chaque relève, profils détaillés toutes les 6 heures.
+let profilsEnCours = false;
+async function releverActivite() {
+  const clan = await clanActuel();
+  const brut = (await coc(`/clans/${encodeURIComponent(CLAN_TAG)}`, 60000)).memberList || [];
+  const evts = A.releverMembres(activite, brut);
+  if (evts.length) {
+    save();
+    const lignes = evts.filter((e) => e.type === 'arrivee' || e.type === 'depart').map((e) => (e.type === 'arrivee' ? `➕ ${e.nom} a rejoint le clan` : `➖ ${e.nom} a quitté le clan`));
+    if (lignes.length) envoyeur.discord(lignes.join('\n'));
+  }
+  const dernier = activite.dernierProfil ? Date.parse(activite.dernierProfil) : 0;
+  if (!profilsEnCours && Date.now() - dernier > 6 * 3600e3) {
+    profilsEnCours = true;
+    try { A.releverProfils(activite, await profils(clan.members.map((m) => m.tag), 3 * 3600e3)); save(); } finally { profilsEnCours = false; }
+  }
+}
+// Profils de plusieurs joueurs, 5 appels à la fois au plus (l'API limite le nombre de requêtes par seconde).
+async function profils(tags, ttl = 30 * 60e3) {
+  const out = [], file = [...tags];
+  await Promise.all(Array.from({ length: 5 }, async () => {
+    while (file.length) {
+      const t = file.shift();
+      try { out.push(await coc(`/players/${encodeURIComponent(t)}`, ttl)); } catch (e) { /* joueur indisponible */ }
+    }
+  }));
+  return out;
+}
+
 async function releve() {
   if (!TOKEN || !CLAN_TAG) return;
-  try { const w = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar`); archiver(w, 'c'); if (!w || w.state === 'notInWar') await suivreLigue(); } catch (e) { /* API indisponible : prochaine fois */ }
+  try {
+    const w = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar`);
+    archiver(w, 'c');
+    await notifier(N.evenementsGuerre(w));
+    if (!w || w.state === 'notInWar') await suivreLigue();
+  } catch (e) { /* API indisponible : prochaine fois */ }
+  try { await releverActivite(); } catch (e) { /* idem */ }
+  try {
+    const r = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/capitalraidseasons?limit=1`, 30 * 60e3);
+    const membres = (await clanActuel()).members;
+    await notifier(N.evenementsRaids((r.items || [])[0], membres));
+  } catch (e) { /* idem */ }
+  try {
+    const p = D.periodeCourante(periodes);
+    if (p) {
+      let membres = [];
+      try { membres = (await clanActuel()).members; } catch (e) { /* liste indisponible */ }
+      await notifier(N.evenementsDispos(p, D.statutPeriode(p), reponses[p.id], membres));
+    }
+  } catch (e) { /* idem */ }
 }
 setInterval(releve, 5 * 60e3).unref();
 // Ligue : vérifiée au plus une fois par minute quand quelqu'un ouvre l'appli hors guerre classique.
@@ -252,6 +340,7 @@ app.get('/api/war', async (req, res) => {
   try {
     const brute = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar`);
     archiver(brute, 'c');
+    notifier(N.evenementsGuerre(brute)).catch(() => {});
     if (!brute || brute.state === 'notInWar') ligueSiBesoin();
     const war = simplifyWar(brute);
     suivreGuerre(war);
@@ -486,7 +575,7 @@ api.get('/guerres', async (req, res) => {
 api.get('/guerres/:id', (req, res) => {
   const g = guerres.find((x) => x.id === req.params.id);
   if (!g) return erreur(res, 404, 'Guerre introuvable (seules les guerres suivies par l’appli ont le détail des attaques).');
-  res.json({ guerre: g, mvp: G.mvp(g) });
+  res.json({ guerre: { ...g, m: g.m.map((m) => ({ ...m, a: m.a.map((a) => ({ ...a, armee: ARMEE.detailler(a.ar) })) })) }, mvp: G.mvp(g) });
 });
 api.get('/stats', async (req, res) => {
   const opts = { derniers: entier(req.query.derniers, 0, MAX_GUERRES), type: typeGuerre(req.query.type) };
@@ -506,7 +595,7 @@ api.get('/joueurs/:tag', async (req, res) => {
   for (const g of guerres) {
     const m = g.m.find((x) => x.t === tag);
     if (!m) continue;
-    attaques.push({ guerre: g.id, type: g.type, debut: g.debut, adv: g.adv.n, res: g.res, apm: g.apm, finie: g.etat === 'warEnded', pos: m.pos, th: m.th, a: m.a, de: m.de });
+    attaques.push({ guerre: g.id, type: g.type, debut: g.debut, adv: g.adv.n, res: g.res, apm: g.apm, finie: g.etat === 'warEnded', pos: m.pos, th: m.th, a: m.a.map((a) => ({ ...a, armee: ARMEE.detailler(a.ar) })), de: m.de });
   }
   if (!profil && !stats) return erreur(res, erreurProfil ? 502 : 404, erreurProfil || 'Joueur introuvable.');
   res.json({ tag, profil, erreurProfil, stats, guerres: attaques.slice(0, 20), compos: G.COMPOS });
@@ -515,17 +604,168 @@ api.get('/joueurs/:tag', async (req, res) => {
 api.put('/guerres/:id/compo', (req, res) => {
   const g = guerres.find((x) => x.id === req.params.id);
   if (!g) return erreur(res, 404, 'Guerre introuvable.');
-  const tag = normTag(req.body && req.body.tag), ordre = Number(req.body && req.body.ordre), compo = req.body && req.body.compo;
+  const tag = normTag(req.body && req.body.tag), ordre = Number(req.body && req.body.ordre);
+  let compo = req.body && req.body.compo, armee = null;
   if (!tag || !Number.isInteger(ordre)) return erreur(res, 400, 'Attaque invalide.');
+  if (req.body && req.body.lien) { // lien d'armée du jeu : compo devinée et composition exacte enregistrée
+    const d = ARMEE.decoderLien(req.body.lien);
+    if (!d) return erreur(res, 400, 'Lien d’armée illisible.');
+    compo = d.compo; armee = ARMEE.compacter(d);
+  }
   if (compo !== null && !G.COMPOS.includes(compo)) return erreur(res, 400, 'Compo inconnue.');
   const s = sessionDe(req);
   const chef = req.get('x-chef') ? checkCode(ipReq(req), req.get('x-chef')) === 'ok' : false;
   if (!chef && !(s && s.tag === tag)) return erreur(res, 403, 'Seul le joueur lui-même (identifié) ou le chef peut indiquer sa compo.');
   const m = g.m.find((x) => x.t === tag), a = m && m.a.find((x) => x.o === ordre);
   if (!a) return erreur(res, 404, 'Attaque introuvable.');
-  if (compo === null) delete a.c; else a.c = compo;
+  if (compo === null) { delete a.c; delete a.ar; } else { a.c = compo; if (armee) a.ar = armee; else if (req.body.lien === undefined) delete a.ar; }
   save(); io.emit('guerres');
+  res.json({ ok: true, compo, armee: armee ? ARMEE.detailler(armee) : null });
+});
+
+// ---------- Lien d'armée → compo ----------
+api.post('/armee', (req, res) => {
+  const d = ARMEE.decoderLien(req.body && req.body.lien);
+  if (!d) return erreur(res, 400, 'Ce n’est pas un lien d’armée Clash of Clans (bouton « Partager » de l’armée dans le jeu).');
+  res.json(d);
+});
+
+// ---------- Raids du Capital ----------
+api.get('/raids', async (req, res) => {
+  let brut;
+  try { brut = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/capitalraidseasons?limit=10`, 15 * 60e3); } catch (e) { return erreur(res, e.status || 502, e.message); }
+  const saisons = (brut.items || []).map(R.saison);
+  let membres = null;
+  try { membres = (await clanActuel()).members; } catch (e) { /* liste indisponible */ }
+  res.json({ saisons, bilan: R.bilanRaids(saisons, membres, { derniers: entier(req.query.derniers, 0, 10) }) });
+});
+
+// ---------- Activité des membres (réservé au chef) ----------
+api.get('/activite', exigerChef, async (req, res) => {
+  try { await releverActivite(); } catch (e) { /* on affiche le dernier relevé connu */ }
+  res.json(A.vueActivite(activite));
+});
+
+// ---------- Ligue de guerre : groupe, classement, calendrier ----------
+api.get('/ldc', async (req, res) => {
+  let groupe;
+  try { groupe = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar/leaguegroup`, 5 * 60e3); }
+  catch (e) { return res.json({ groupe: null, raison: e.status === 404 ? 'Pas de ligue de guerre en cours.' : e.message }); }
+  const guerresParTag = {};
+  for (const r of groupe.rounds || []) for (const tag of r.warTags || []) {
+    if (!tag || tag === '#0') continue;
+    const deja = guerres.find((g) => g.id === 'l-' + tag.replace('#', ''));
+    try { guerresParTag[tag] = await coc(`/clanwarleagues/wars/${encodeURIComponent(tag)}`, deja && deja.etat === 'warEnded' ? 12 * 3600e3 : 5 * 60e3); } catch (e) { /* guerre indisponible */ }
+  }
+  const liste = Object.values(guerresParTag);
+  res.json({ saison: groupe.season || null, etat: groupe.state || null, classement: L.classementGroupe(groupe, liste), calendrier: L.calendrier(groupe, guerresParTag, CLAN_TAG),
+    clans: (groupe.clans || []).map((c) => ({ tag: c.tag, nom: c.name, niveau: c.clanLevel, badge: c.badgeUrls ? c.badgeUrls.small : null,
+      hdv: (c.members || []).reduce((h, m) => { h[m.townHallLevel] = (h[m.townHallLevel] || 0) + 1; return h; }, {}) })) });
+});
+
+// ---------- Repérage de l'adversaire et proposition de cibles ----------
+api.get('/reperage', async (req, res) => {
+  let w;
+  try { w = await coc(`/clans/${encodeURIComponent(CLAN_TAG)}/currentwar`); } catch (e) { return erreur(res, e.status || 502, e.message); }
+  if (!w || !w.opponent || !['preparation', 'inWar'].includes(w.state)) return res.json({ guerre: null });
+  const tous = [...(w.clan.members || []), ...(w.opponent.members || [])].map((m) => m.tag);
+  const p = new Map((await profils(tous, 30 * 60e3)).map((x) => [x.tag, x]));
+  const fiche = (m) => {
+    const f = p.get(m.tag) ? SC.force(p.get(m.tag)) : { th: m.townhallLevel, heros: 0, force: (m.townhallLevel || 0) * 100, detailHeros: [], etoilesGuerre: 0 };
+    return { tag: m.tag, nom: m.name, pos: m.mapPosition, ...f, th: m.townhallLevel || f.th, triplee: (m.bestOpponentAttack && m.bestOpponentAttack.stars === 3) || false, attaques: (m.attacks || []).length };
+  };
+  const nous = (w.clan.members || []).map(fiche).sort((a, b) => a.pos - b.pos);
+  const eux = (w.opponent.members || []).map(fiche).sort((a, b) => a.pos - b.pos);
+  // Les bases déjà à 3 étoiles (côté adverse) sont celles visées par des attaques à 3 étoiles de notre clan.
+  const triplees = new Set();
+  for (const m of w.clan.members || []) for (const a of m.attacks || []) if (a.stars === 3) triplees.add(a.defenderTag);
+  let clanAdv = null, journalAdv = null;
+  try {
+    const c = await coc(`/clans/${encodeURIComponent(w.opponent.tag)}`, 60 * 60e3);
+    clanAdv = { nom: c.name, niveau: c.clanLevel, victoires: c.warWins || 0, serie: c.warWinStreak || 0, defaites: c.warLosses ?? null, ligue: c.warLeague ? c.warLeague.name : null, journalPublic: c.isWarLogPublic !== false, pays: c.location ? c.location.name : null };
+    if (c.isWarLogPublic) {
+      const j = ((await coc(`/clans/${encodeURIComponent(w.opponent.tag)}/warlog?limit=10`, 60 * 60e3)).items) || [];
+      const finies = j.filter((x) => x.result);
+      journalAdv = { guerres: finies.length, victoires: finies.filter((x) => x.result === 'win').length, moyEtoiles: finies.length ? Math.round((10 * finies.reduce((s2, x) => s2 + (x.clan.stars || 0), 0)) / finies.length) / 10 : null };
+    }
+  } catch (e) { /* clan adverse indisponible */ }
+  const plan = SC.proposer(nous.filter((m) => m.attaques < (w.attacksPerMember || 2)), eux, { dejaTriplees: triplees });
+  res.json({ guerre: { etat: w.state, taille: w.teamSize, adv: w.opponent.name }, nous, eux: eux.map((o) => ({ ...o, triplee: triplees.has(o.tag) })), clanAdv, journalAdv, plan });
+});
+
+// ---------- Saison (Pass or) ----------
+api.get('/saison', async (req, res) => {
+  try { const g = await coc('/goldpass/seasons/current', 6 * 3600e3); res.json({ debut: G.tdate(g.startTime), fin: G.tdate(g.endTime) }); }
+  catch (e) { erreur(res, e.status || 502, e.message); }
+});
+
+// ---------- Chat de l'appli ----------
+const dernierMessage = new Map();
+const auteurDe = (req) => {
+  const s = sessionDe(req);
+  const chef = req.get('x-chef') ? checkCode(ipReq(req), req.get('x-chef')) === 'ok' : false;
+  if (!s && !chef) return null;
+  return { tag: s ? s.tag : null, nom: s ? s.nom : 'Chef', chef };
+};
+api.get('/chat', (req, res) => res.json({ messages: chat.slice(-100) }));
+api.post('/chat', async (req, res) => {
+  const auteur = auteurDe(req);
+  if (!auteur) return erreur(res, 401, 'Identifie-toi (écran Signe / Non) pour écrire dans le chat.');
+  const texte = String((req.body && req.body.texte) || '').replace(/\s+$/g, '').slice(0, 500);
+  if (!texte.trim()) return erreur(res, 400, 'Message vide.');
+  const annonce = Boolean(req.body && req.body.annonce);
+  if (annonce && !auteur.chef) return erreur(res, 403, 'Seul le chef peut faire une annonce.');
+  const cleAuteur = auteur.tag || 'chef';
+  if (Date.now() - (dernierMessage.get(cleAuteur) || 0) < 2000) return erreur(res, 429, 'Doucement : un message toutes les 2 secondes.');
+  dernierMessage.set(cleAuteur, Date.now());
+  const m = { id: crypto.randomBytes(6).toString('hex'), le: new Date().toISOString(), auteur, texte, annonce };
+  chat.push(m); if (chat.length > 300) chat.splice(0, chat.length - 300);
+  save(); io.emit('chat', m);
+  let envoyes = 0, discord = false;
+  if (annonce) {
+    envoyes = await envoyeur.pousser(abonnements, { cle: 'annonce:' + m.id, type: 'annonces', titre: '📣 Annonce du chef', corps: texte.slice(0, 180), url: '/chat.html' });
+    discord = await envoyeur.discord(`📣 **Annonce du chef**\n${texte}`);
+  }
+  res.status(201).json({ message: m, envoyes, discord });
+});
+api.delete('/chat/:id', exigerChef, (req, res) => {
+  const i = chat.findIndex((m) => m.id === req.params.id);
+  if (i < 0) return erreur(res, 404, 'Message introuvable.');
+  chat.splice(i, 1); save(); io.emit('chat-suppr', req.params.id);
   res.json({ ok: true });
+});
+
+// ---------- Abonnements aux notifications ----------
+const idAbonnement = (endpoint) => crypto.createHash('sha256').update(String(endpoint)).digest('hex').slice(0, 24);
+const prefsValides = (p) => Object.fromEntries(N.TYPES.map((t) => [t, !(p && p[t] === false)]));
+api.get('/notifs', (req, res) => res.json({ disponible: Boolean(webpush && vapid), cle: vapid ? vapid.publicKey : null, discord: Boolean(DISCORD), types: N.TYPES }));
+api.post('/notifs/abonnement', (req, res) => {
+  const sub = req.body && req.body.sub;
+  if (!sub || typeof sub.endpoint !== 'string' || !(/^https:\/\//.test(sub.endpoint) || LOCAL_TEST(sub.endpoint)) || sub.endpoint.length > 1000 || !sub.keys || typeof sub.keys.p256dh !== 'string' || typeof sub.keys.auth !== 'string') return erreur(res, 400, 'Abonnement invalide.');
+  const s = sessionDe(req), id = idAbonnement(sub.endpoint);
+  abonnements = abonnements.filter((a) => a.id !== id);
+  abonnements.push({ id, sub: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh.slice(0, 200), auth: sub.keys.auth.slice(0, 100) } }, tag: s ? s.tag : null, prefs: prefsValides(req.body.prefs), cree: new Date().toISOString() });
+  if (abonnements.length > 500) abonnements.shift();
+  save();
+  res.status(201).json({ id, tag: s ? s.tag : null });
+});
+api.patch('/notifs/abonnement', (req, res) => {
+  const a = abonnements.find((x) => x.id === idAbonnement(req.body && req.body.endpoint));
+  if (!a) return erreur(res, 404, 'Abonnement introuvable.');
+  a.prefs = prefsValides(req.body.prefs);
+  const s = sessionDe(req); if (s) a.tag = s.tag;
+  save(); res.json({ ok: true, prefs: a.prefs });
+});
+api.delete('/notifs/abonnement', (req, res) => {
+  const id = idAbonnement(req.body && req.body.endpoint);
+  abonnements = abonnements.filter((a) => a.id !== id); save();
+  res.json({ ok: true });
+});
+api.post('/notifs/test', async (req, res) => {
+  const a = abonnements.find((x) => x.id === idAbonnement(req.body && req.body.endpoint));
+  if (!a) return erreur(res, 404, 'Abonnement introuvable.');
+  const n = await envoyeur.pousser([a], { cle: 'test', type: 'annonces', titre: '✅ Notifications actives', corps: 'Tu recevras les alertes de guerre ici.', url: '/menu.html' });
+  res.json({ envoyes: n });
 });
 app.use('/api', api);
 app.use(express.static(path.join(__dirname, 'public')));
@@ -663,7 +903,7 @@ server.on('error', (e) => {
 // Arrêt demandé par l'hébergeur (mise à jour, mise en veille) : on termine l'écriture en cours avant de quitter.
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { stockage.vider().finally(() => process.exit(0)); });
 
-stockage.charger().then(appliquerDonnees).finally(() => server.listen(PORT, '0.0.0.0', () => {
+stockage.charger().then(appliquerDonnees).finally(initNotifs).finally(() => server.listen(PORT, '0.0.0.0', () => {
   const ips = Object.values(os.networkInterfaces()).flat()
     .filter((i) => i && i.family === 'IPv4' && !i.internal)
     .map((i) => i.address);

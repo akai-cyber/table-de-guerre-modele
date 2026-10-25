@@ -18,9 +18,9 @@
 </head>
 <body class="avec-actions">
 <header class="top">
-  <div class="blason" id="blason"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="blason" id="blason" role="button" tabindex="0" aria-label="Informations du clan"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
   <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Chargement…</small></div>
-  <button class="btn carre sombre" id="infosBtn" type="button" aria-label="Informations du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg></button>
+  <a class="btn carre sombre" id="chatBtn" href="/chat.html" aria-label="Chat du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-message"/></svg><span class="pastille-nb" id="chatNb" hidden></span></a>
   <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
 </header>
 <div id="chefPanel" hidden>

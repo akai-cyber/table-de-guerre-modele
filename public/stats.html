@@ -18,9 +18,9 @@
 </head>
 <body>
 <header class="top">
-  <div class="blason" id="blason"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
+  <div class="blason" id="blason" role="button" tabindex="0" aria-label="Informations du clan"><svg viewBox="0 0 50 56" aria-hidden="true"><path d="M25 3l19 6v17c0 13-8 22-19 27C14 48 6 39 6 26V9z" fill="#6A3FB8" stroke="#051A30" stroke-width="3.5" stroke-linejoin="round"/><path d="M25 8l14 4.6V26c0 9.8-5.8 16.8-14 21-8.2-4.2-14-11.2-14-21V12.6z" fill="#8B5CF0"/><path d="M16 21l5 4 4-8 4 8 5-4-2 13H18z" fill="#FFC928" stroke="#051A30" stroke-width="2" stroke-linejoin="round"/></svg></div>
   <div class="titre-entete"><h1 id="titreClan">Table de guerre</h1><small id="sous">Chargement…</small></div>
-  <button class="btn carre sombre" id="infosBtn" type="button" aria-label="Informations du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-info"/></svg></button>
+  <a class="btn carre sombre" id="chatBtn" href="/chat.html" aria-label="Chat du clan"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-message"/></svg><span class="pastille-nb" id="chatNb" hidden></span></a>
   <button class="btn" id="chefBtn" type="button" aria-expanded="false" aria-controls="chefPanel">Chef</button>
 </header>
 <div id="chefPanel" hidden>
@@ -41,10 +41,13 @@
     <div class="kpis" id="kpis" style="margin-top:10px"><div class="squelette" style="height:58px;grid-column:1/-1"></div></div>
   </section>
 
-  <div class="onglets trois" id="vues" role="tablist" aria-label="Vue">
+  <div class="onglets trois six" id="vues" role="tablist" aria-label="Vue">
     <button type="button" role="tab" class="puce-filtre on" data-vue="classement" aria-selected="true">Classement</button>
     <button type="button" role="tab" class="puce-filtre" data-vue="historique" aria-selected="false">Historique</button>
     <button type="button" role="tab" class="puce-filtre" data-vue="compos" aria-selected="false">Compos</button>
+    <button type="button" role="tab" class="puce-filtre" data-vue="raids" aria-selected="false">Raids</button>
+    <button type="button" role="tab" class="puce-filtre" data-vue="activite" aria-selected="false">Activité</button>
+    <button type="button" role="tab" class="puce-filtre" data-vue="ldc" aria-selected="false">Ligue</button>
   </div>
 
   <section id="vueClassement" aria-label="Classement des joueurs">
@@ -66,6 +69,10 @@
     <div class="entete-panneau"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-epees"/></svg><h2 id="tCompos">Compos du clan</h2></div>
     <div id="compos"></div>
   </section>
+
+  <section id="vueRaids" hidden aria-label="Raids du Capital"><div class="squelette" style="height:120px"></div></section>
+  <section id="vueActivite" hidden aria-label="Activité des membres"><div class="squelette" style="height:120px"></div></section>
+  <section id="vueLdc" hidden aria-label="Ligue de guerre"><div class="squelette" style="height:120px"></div></section>
 
   <p class="doux mention">This material is unofficial and is not endorsed by Supercell. For more information see Supercell’s Fan Content Policy: www.supercell.com/fan-content-policy.</p>
 </main>

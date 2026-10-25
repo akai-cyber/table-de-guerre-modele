@@ -73,10 +73,14 @@ function rendre() {
     <li class="carte-guerre ${g.finie ? g.res || '' : 'encours'}" style="grid-template-columns:minmax(0,1fr)">
       <div><div class="adv">vs ${esc(g.adv)}</div><small>${g.debut ? fmtJour(g.debut) : ''} · ${g.type === 'l' ? 'Ligue' : 'Guerre'} · position ${g.pos || '?'} · HDV ${g.th || '?'}${g.finie ? ' · ' + (RESULTATS[g.res] || '') : ' · en cours'}</small>
       ${g.a.length ? g.a.map((a) => `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><span class="k">B${a.dpos || '?'}${a.dth ? ' · HDV ' + a.dth : ''}</span>${etoilesHtml(a.e)}<span class="doux">${nombre(a.p, 0)} %${a.ne ? ` · +${a.ne}★` : ''}</span>
-        ${moi || estChef ? `<select class="select-compo" data-guerre="${esc(g.guerre)}" data-ordre="${a.o}" aria-label="Compo">${opt(a.c)}</select>` : a.c ? `<span class="k or">${esc(a.c)}</span>` : ''}</div>`).join('')
+        ${moi || estChef ? `<select class="select-compo" data-guerre="${esc(g.guerre)}" data-ordre="${a.o}" aria-label="Compo">${opt(a.c)}</select><button type="button" class="btn petit sombre" data-lien data-guerre="${esc(g.guerre)}" data-ordre="${a.o}">${ico('lien')}Lien d’armée</button>` : a.c ? `<span class="k or">${esc(a.c)}</span>` : ''}</div>${armeeHtml(a.armee)}`).join('')
         : `<div style="margin-top:6px"><span class="k rouge">${g.finie ? 'Aucune attaque' : 'Pas encore attaqué'}</span></div>`}
       ${g.finie && g.a.length < g.apm && g.a.length ? `<small style="color:var(--rouge)">${g.apm - g.a.length} attaque ratée</small>` : ''}</div></li>`).join('')}</ul>`;
 }
+$('attaques').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-lien]');
+  if (b && await saisirLienArmee(b.dataset.guerre, TAG, Number(b.dataset.ordre))) charger();
+});
 $('attaques').addEventListener('change', async (e) => {
   const s = e.target.closest('.select-compo');
   if (!s) return;

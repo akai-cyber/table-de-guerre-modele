@@ -38,6 +38,14 @@
 <symbol id="i-image" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.6"/><path d="M3.5 16l5-5 4 4 2.5-2.5 5 5"/></g><circle cx="15.5" cy="9" r="1.8" fill="currentColor"/></symbol>
 <symbol id="i-agrandir" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-cible" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/></g><circle cx="12" cy="12" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5.5h16v10.5H9l-4.5 3.5V16H4z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M8 9.5h8M8 12.5h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="i-envoyer" viewBox="0 0 24 24"><path d="M3.5 11.5l17-7.5-6.5 17-2.5-7z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11.5 14l9-10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="i-megaphone" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 10v4h3l9 5V5l-9 5z"/><path d="M6.5 14l1.5 6h3l-1-5M19 9.5a3.5 3.5 0 0 1 0 5"/></g></symbol>
+<symbol id="i-capital" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 20.5h18M5 20.5V10l3-2v12.5M16 20.5V8l3 2v10.5M9 20.5V6l3-3 3 3v14.5"/><path d="M11 20.5v-4h2v4"/></g></symbol>
+<symbol id="i-pouls" viewBox="0 0 24 24"><path d="M2.5 12.5h4l2.5-6 4 12 2.5-6h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-loupe-cible" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5M10.5 7v7M7 10.5h7"/></g></symbol>
+<symbol id="i-lien" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></g></symbol>
+<symbol id="i-ouvrir" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 19V7.5A1.5 1.5 0 0 1 5.5 6H10"/></g></symbol>
 <!-- Emblème « Signe / Non » (moderne) -->
 <symbol id="ill-panneau" viewBox="0 0 120 112">
   <path d="M60 4l50 28v48L60 108 10 80V32z" fill="#0E1626" stroke="#F5B82E" stroke-width="4" stroke-linejoin="round"/>

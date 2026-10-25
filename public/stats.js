@@ -18,6 +18,7 @@ async function charger() {
 }
 socket.on('guerres', () => charger());
 document.addEventListener('visibilitychange', () => { if (!document.hidden) charger(); });
+document.addEventListener('chef', () => { if (vue === 'activite') rendreActivite(); });
 
 function rendre() {
   if (erreur && !S) {
@@ -29,6 +30,9 @@ function rendre() {
   if (vue === 'classement') rendreClassement();
   if (vue === 'historique') rendreHistorique();
   if (vue === 'compos') rendreCompos();
+  if (vue === 'raids') rendreRaids();
+  if (vue === 'activite') rendreActivite();
+  if (vue === 'ldc') rendreLdc();
 }
 
 // ---------- Bilan du clan
@@ -44,6 +48,7 @@ function rendreKpis() {
 function rendreVues() {
   document.querySelectorAll('#vues [data-vue]').forEach((b) => { const on = b.dataset.vue === vue; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
   $('vueClassement').hidden = vue !== 'classement'; $('vueHistorique').hidden = vue !== 'historique'; $('vueCompos').hidden = vue !== 'compos';
+  $('vueRaids').hidden = vue !== 'raids'; $('vueActivite').hidden = vue !== 'activite'; $('vueLdc').hidden = vue !== 'ldc';
 }
 $('vues').addEventListener('click', (e) => { const b = e.target.closest('[data-vue]'); if (!b) return; vue = b.dataset.vue; store.set('cb_vue_stats', vue); rendre(); });
 $('fDerniers').onchange = (e) => { derniers = e.target.value; store.set('cb_derniers', derniers); charger(); };
@@ -125,7 +130,7 @@ async function ouvrirGuerre(id) {
     const peut = estChef || (moi === m.t && store.get('cb_session'));
     const att = m.a.length ? m.a.map((a) => `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:2px 0">
         <span class="k">B${a.dpos || '?'}${a.dth ? ' · HDV ' + a.dth : ''}</span>${etoilesHtml(a.e)}<span class="doux">${nombre(a.p, 0)} %${a.ne ? ` · +${a.ne}★` : ''}</span>
-        ${peut ? `<select class="select-compo" data-guerre="${esc(g.id)}" data-tag="${esc(m.t)}" data-ordre="${a.o}" aria-label="Compo de l’attaque">${opt(a.c)}</select>` : a.c ? `<span class="k or">${esc(a.c)}</span>` : ''}</div>`).join('')
+        ${peut ? `<select class="select-compo" data-guerre="${esc(g.id)}" data-tag="${esc(m.t)}" data-ordre="${a.o}" aria-label="Compo de l’attaque">${opt(a.c)}</select><button type="button" class="btn petit sombre carre" data-lien data-guerre="${esc(g.id)}" data-tag="${esc(m.t)}" data-ordre="${a.o}" aria-label="Lien d’armée">${ico('lien')}</button>` : a.c ? `<span class="k or">${esc(a.c)}</span>` : ''}</div>${armeeHtml(a.armee)}`).join('')
       : `<span class="k rouge">Aucune attaque</span>`;
     const rate = g.etat === 'warEnded' && m.a.length < g.apm;
     return `<tr><td class="num">${m.pos || ''}</td><td><b class="chiffre-jeu" style="font-size:15px">${esc(m.n)}</b><br><small>HDV ${m.th || '?'}${rate ? ' · <span style="color:var(--rouge)">' + (g.apm - m.a.length) + ' ratée(s)</span>' : ''}</small></td><td>${att}</td></tr>`;
@@ -139,6 +144,10 @@ async function ouvrirGuerre(id) {
       <small>« +n★ » = nouvelles étoiles apportées au clan. La compo n’est pas fournie par Clash : le joueur (identifié) ou le chef la renseigne.</small>`,
     avant: (m) => {
       m.querySelector('.boite').classList.add('large');
+      m.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-lien]');
+        if (b && await saisirLienArmee(b.dataset.guerre, b.dataset.tag, Number(b.dataset.ordre))) { m.remove(); ouvrirGuerre(b.dataset.guerre); }
+      });
       m.addEventListener('change', async (e) => {
         const s = e.target.closest('.select-compo');
         if (!s) return;
@@ -159,6 +168,60 @@ function rendreCompos() {
     : `<div class="defile"><table class="tableau"><thead><tr><th>Compo</th><th class="num">Utilisée</th><th class="num">3★</th><th class="num">★ moy.</th></tr></thead><tbody>
       ${c.map((x, i) => `<tr><td>${i === 0 ? ico('trophee') + ' ' : ''}<b>${esc(x.compo)}</b><div class="jauge"><i style="width:${x.tauxTriple}%"></i></div></td><td class="num">${x.n}</td><td class="num" style="color:var(--or-clair)">${nombre(x.tauxTriple)} %</td><td class="num">${nombre(x.moyEtoiles, 2)}</td></tr>`).join('')}
       </tbody></table></div>`;
+}
+
+// ---------- Raids du Capital
+const kpi = (lib, val, cls = '') => `<div class="kpi"><small>${lib}</small><b class="${cls}">${val}</b></div>`;
+async function rendreRaids() {
+  const z = $('vueRaids');
+  let d;
+  try { d = await api('/api/raids'); } catch (e) { z.innerHTML = `<div class="err">${ico('alerte')}<span>${esc(e.message)}</span></div>`; return; }
+  const s = d.saisons[0];
+  if (!s) { z.innerHTML = `<div class="panneau creux"><p class="doux">${ico('info')} Aucun week-end de raid trouvé.</p></div>`; return; }
+  const membres = s.membres.map((m, i) => `<li class="r"><span class="rang-num">${i + 1}</span><div class="info"><b>${esc(m.nom)}</b><small>${m.attaques}/${m.limite} attaques${m.attaques < m.limite && s.etat === 'termine' ? ' · <span style="color:var(--rouge)">' + (m.limite - m.attaques) + ' non jouée(s)</span>' : ''}</small></div><span class="note-badge">${nombre(m.butin, 0)}</span></li>`).join('');
+  const bilan = d.bilan.joueurs.map((j) => `<tr><td class="num">${j.rang}</td><td><b>${esc(j.nom)}</b>${j.absences ? ` <span class="k rouge">${j.absences} absent</span>` : ''}</td><td class="num">${nombre(j.butinMoyen, 0)}</td><td class="num">${nombre(j.participation)} %</td></tr>`).join('');
+  z.innerHTML = `<div class="panneau"><div class="entete-panneau">${ico('capital')}<h2>${s.etat === 'en_cours' ? 'Raid en cours' : 'Dernier week-end'}</h2><span class="k ${s.etat === 'en_cours' ? 'cyan' : 'gris'} droite">${fmtJour(s.debut)} → ${fmtJour(s.fin)}</span></div>
+      <div class="kpis">${kpi('Butin du clan', nombre(s.butin, 0), 'or')}${kpi('Raids terminés', s.raids)}${kpi('Attaques', s.attaques, 'cyan')}${kpi('Quartiers détruits', s.quartiers)}</div>
+      <ul class="liste" style="margin-top:12px">${membres || '<li class="vide-liste">Personne n’a encore attaqué.</li>'}</ul></div>
+    <div class="panneau creux" style="margin-top:14px"><div class="entete-panneau">${ico('medaille')}<h2>Bilan sur ${d.bilan.weekends} week-ends</h2></div>
+      ${bilan ? `<div class="defile"><table class="tableau"><thead><tr><th class="num">#</th><th>Joueur</th><th class="num">Butin moy.</th><th class="num">Attaques</th></tr></thead><tbody>${bilan}</tbody></table></div>` : '<p class="doux">Pas encore de week-end terminé.</p>'}
+      <small>« Attaques » = attaques jouées sur les attaques disponibles. Un membre absent d’un week-end compte 0 sur 6.</small></div>`;
+}
+
+// ---------- Activité (chef)
+const EVTS = { arrivee: ['➕', 'a rejoint le clan'], depart: ['➖', 'a quitté le clan'], retour: ['↩️', 'est revenu'], role: ['⬆️', 'a changé de rôle'] };
+async function rendreActivite() {
+  const z = $('vueActivite');
+  if (!estChef) { z.innerHTML = `<div class="panneau creux"><p class="doux">${ico('cadenas')} Le suivi d’activité (inactifs, dons, Jeux de clan) est réservé au chef : active le mode chef pour le voir.</p></div>`; return; }
+  let d;
+  try { d = await api('/api/activite', { chef: true }); } catch (e) { z.innerHTML = `<div class="err">${ico('alerte')}<span>${esc(e.message)}</span></div>`; return; }
+  const inactifs = d.joueurs.filter((j) => j.joursInactif >= 3).length;
+  const lignes = d.joueurs.map((j) => `<tr><td><a href="/joueur.html?tag=${encodeURIComponent(j.tag)}" style="color:inherit;text-decoration:none"><b>${esc(j.nom)}</b></a><br><small>${esc(ROLES_FR[j.role] || '')}</small></td>
+    <td class="num" style="color:${j.joursInactif >= 7 ? 'var(--rouge)' : j.joursInactif >= 3 ? 'var(--or-clair)' : 'var(--vert)'}">${j.joursInactif ? j.joursInactif + ' j' : 'auj.'}</td>
+    <td class="num">${nombre(j.dons, 0)}<br><small>${nombre(j.recus, 0)} reçus</small></td><td class="num">${nombre(j.jeuxMois, 0)}</td><td class="num">${j.etoilesMois}</td></tr>`).join('');
+  const evts = d.evenements.slice(0, 12).map((e) => `<li class="r"><span style="font-size:20px">${(EVTS[e.type] || ['•'])[0]}</span><div class="info"><b>${esc(e.nom)}</b><small>${(EVTS[e.type] || ['', e.type])[1]}${e.type === 'role' ? ` : ${esc(ROLES_FR[e.de] || e.de)} → ${esc(ROLES_FR[e.a] || e.a)}` : ''} · ${esc(ilYa(e.le))}</small></div></li>`).join('');
+  z.innerHTML = `<div class="panneau"><div class="entete-panneau">${ico('pouls')}<h2>Activité des membres</h2></div>
+      <div class="kpis">${kpi('Membres suivis', d.joueurs.length, 'cyan')}${kpi('Inactifs 3 j et +', inactifs, inactifs ? 'rouge' : 'vert')}</div>
+      <div class="defile" style="margin-top:12px"><table class="tableau"><thead><tr><th>Joueur</th><th class="num">Dernière activité</th><th class="num">Dons</th><th class="num">Jeux (mois)</th><th class="num">★ guerre (mois)</th></tr></thead><tbody>${lignes}</tbody></table></div>
+      <small>L’API ne donne pas la dernière connexion : un joueur est « actif » le dernier jour où ses dons, trophées, attaques, étoiles de guerre ou points des Jeux de clan ont bougé. Les chiffres du mois se remplissent à partir du début du suivi${d.dernierProfil ? ' (profils relevés ' + esc(ilYa(d.dernierProfil)) + ')' : ''}.</small></div>
+    <div class="panneau creux" style="margin-top:14px"><div class="entete-panneau">${ico('membres')}<h2>Arrivées et départs</h2></div>
+      <ul class="liste">${evts || '<li class="vide-liste">Rien de neuf depuis le début du suivi.</li>'}</ul></div>`;
+}
+
+// ---------- Ligue de guerre
+async function rendreLdc() {
+  const z = $('vueLdc');
+  let d;
+  try { d = await api('/api/ldc'); } catch (e) { z.innerHTML = `<div class="err">${ico('alerte')}<span>${esc(e.message)}</span></div>`; return; }
+  if (!d.classement) { z.innerHTML = `<div class="panneau creux"><p class="doux">${ico('info')} ${esc(d.raison || 'Pas de ligue de guerre en cours.')} La ligue a lieu en début de mois ; ses guerres apparaissent aussi dans l’historique.</p></div>`; return; }
+  const cl = d.classement.map((c) => `<tr${c.tag === (CLAN && CLAN.tag) ? ' style="background:rgba(245,184,46,.1)"' : ''}><td class="num">${c.rang}</td><td><b>${esc(c.nom)}</b><br><small>niv. ${c.niveau} · ${c.victoires} V / ${c.defaites} D</small></td><td class="num" style="color:var(--or-clair)">${c.etoiles}</td><td class="num">${nombre(c.destruction, 0)} %</td></tr>`).join('');
+  const cal = d.calendrier.map((j) => j.eux
+    ? `<li class="carte-guerre ${j.etat === 'warEnded' ? (j.nous.e > j.eux.e || (j.nous.e === j.eux.e && j.nous.p > j.eux.p) ? 'victoire' : j.nous.e === j.eux.e && j.nous.p === j.eux.p ? 'egalite' : 'defaite') : 'encours'}"><span class="rang-num">J${j.journee}</span><div style="min-width:0"><div class="adv">${esc(j.eux.n)}</div><small>${j.etat === 'preparation' ? 'Préparation' : j.etat === 'inWar' ? 'En cours' : 'Terminée'}</small></div><div class="score"><span class="nous">${j.nous.e}</span> <span class="doux">–</span> <span class="eux">${j.eux.e}</span></div></li>`
+    : `<li class="carte-guerre"><span class="rang-num">J${j.journee}</span><div class="adv doux">À venir</div><span></span></li>`).join('');
+  z.innerHTML = `<div class="panneau"><div class="entete-panneau">${ico('trophee')}<h2>Classement du groupe</h2><span class="k droite">${esc(d.saison || '')}</span></div>
+      <div class="defile"><table class="tableau"><thead><tr><th class="num">#</th><th>Clan</th><th class="num">★</th><th class="num">Destr. cumulée</th></tr></thead><tbody>${cl}</tbody></table></div>
+      <small>Étoiles + 10 par victoire, départage à la destruction cumulée.</small></div>
+    <div class="panneau creux" style="margin-top:14px"><div class="entete-panneau">${ico('calendrier')}<h2>Nos journées</h2></div><ul class="liste">${cal}</ul></div>`;
 }
 
 charger();

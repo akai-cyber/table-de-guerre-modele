@@ -217,3 +217,81 @@ const formeHtml = (f) => `<span class="forme" title="Dernières attaques (étoil
 const nombre = (v, d = 1) => (v == null ? '—' : Number(v).toLocaleString('fr-FR', { maximumFractionDigits: d }));
 const RESULTATS = { victoire: 'Victoire', defaite: 'Défaite', egalite: 'Égalité' };
 const ICONE_HEROS = { 'Barbarian King': 'roi', 'Archer Queen': 'reine', 'Grand Warden': 'gardien', 'Royal Champion': 'championne', 'Minion Prince': 'prince' };
+
+// ---------- Blason : touche = informations du clan
+(() => {
+  const b = $('blason');
+  if (!b) return;
+  b.addEventListener('click', infosClan);
+  b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); infosClan(); } });
+})();
+
+// ---------- Messages non lus du chat (pastille sur le bouton de l'en-tête)
+(() => {
+  const nb = $('chatNb');
+  if (!nb || location.pathname === '/chat.html') return;
+  let n = 0;
+  const peindre = () => { nb.hidden = !n; nb.textContent = n > 9 ? '9+' : String(n); };
+  const vu = Date.parse(store.get('cb_chat_vu') || 0) || 0;
+  fetch('/api/chat', { cache: 'no-store' }).then((r) => r.json()).then((d) => { n = (d.messages || []).filter((m) => Date.parse(m.le) > vu).length; peindre(); }).catch(() => {});
+  socket.on('chat', () => { n++; peindre(); });
+})();
+
+// ---------- Copier un texte puis ouvrir Clash of Clans sur la page du clan (le joueur n'a plus qu'à coller)
+async function copierEtOuvrirClash(texte) {
+  let copie = false;
+  try { await navigator.clipboard.writeText(texte); copie = true; } catch (e) { /* presse-papiers refusé */ }
+  ui.toast(copie ? 'Message copié : colle-le dans le chat du clan.' : 'Copie impossible : sélectionne le texte à la main.', copie ? 'ok' : 'err');
+  const tag = (CLAN && CLAN.tag) || '';
+  // Lien officiel du jeu : ouvre Clash of Clans (s'il est installé) sur la fiche du clan, d'où le chat est à un geste.
+  setTimeout(() => { location.href = 'https://link.clashofclans.com/fr?action=OpenClanProfile&tag=' + encodeURIComponent(tag); }, 600);
+}
+
+// ---------- Notifications du navigateur (Web Push)
+const notifs = {
+  prises: () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+  async abonnement() {
+    if (!notifs.prises()) return null;
+    const reg = await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  },
+  async activer(prefs) {
+    const info = await api('/api/notifs');
+    if (!info.disponible) throw new Error('Les notifications ne sont pas activées sur ce serveur.');
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error('Autorisation refusée : active les notifications pour ce site dans les réglages du navigateur.');
+    const reg = await navigator.serviceWorker.ready;
+    const cle = Uint8Array.from(atob(info.cle.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((info.cle.length + 3) % 4)), (c) => c.charCodeAt(0));
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: cle });
+    await api('/api/notifs/abonnement', { method: 'POST', body: { sub: sub.toJSON(), prefs } });
+    store.set('cb_notifs_prefs', JSON.stringify(prefs || {}));
+    return sub;
+  },
+  async desactiver() {
+    const sub = await notifs.abonnement();
+    if (!sub) return;
+    try { await api('/api/notifs/abonnement', { method: 'DELETE', body: { endpoint: sub.endpoint } }); } catch (e) { /* serveur injoignable */ }
+    await sub.unsubscribe();
+  },
+};
+
+// ---------- Lien d'armée : composition détaillée et saisie
+const armeeHtml = (a) => a && (a.troupes.length || a.sorts.length)
+  ? `<div class="armee">${a.troupes.map((t) => `<span class="k">${t.n}× ${esc(t.nom)}</span>`).join('')}${a.sorts.map((t) => `<span class="k cyan">${t.n}× ${esc(t.nom)}</span>`).join('')}</div>` : '';
+// Demande le lien (bouton « Partager » de l'armée dans le jeu) puis l'enregistre sur l'attaque.
+async function saisirLienArmee(guerre, tag, ordre) {
+  const ok = await ui.modale({
+    titre: 'Lien d’armée', icone: 'lien',
+    corps: `<p class="doux">Dans Clash : <b>Armée → l’armée utilisée → Partager</b>, puis colle le lien ici. La compo et la composition exacte sont remplies toutes seules.</p>
+      <label class="champ"><span>Lien</span><input id="lienArmee" inputmode="url" placeholder="https://link.clashofclans.com/…action=CopyArmy…"></label><div id="lienErr"></div>`,
+    actions: [{ texte: 'Annuler', valeur: false, classe: 'sombre' }, { texte: 'Enregistrer', valeur: true, classe: 'on', valider: async (m) => {
+      const lien = m.querySelector('#lienArmee').value.trim();
+      try {
+        const r = await api(`/api/guerres/${encodeURIComponent(guerre)}/compo`, { method: 'PUT', body: { tag, ordre, lien }, chef: estChef });
+        ui.toast(`Compo reconnue : ${r.compo}.`, 'ok');
+        return true;
+      } catch (e) { m.querySelector('#lienErr').innerHTML = `<div class="err">${ico('alerte')}<span>${esc(e.message)}</span></div>`; return false; }
+    } }],
+  });
+  return ok;
+}
