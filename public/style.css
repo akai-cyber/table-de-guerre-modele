@@ -442,3 +442,4 @@ body.plein::before{content:'';position:fixed;inset:0;background:#000;z-index:25}
 .seg{grid-auto-columns:minmax(0,1fr)}
 .seg .btn{min-width:0;padding:0 6px;line-height:1.05;white-space:normal;text-align:center}
 @media (max-width:370px){.seg .btn{font-size:13px;letter-spacing:.03em;padding:0 3px}}
+.compositeur .btn{flex:none;width:46px;min-height:46px;font-size:16px}
