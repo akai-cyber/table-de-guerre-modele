@@ -41,7 +41,8 @@
     <div class="kpis" id="kpis" style="margin-top:10px"><div class="squelette" style="height:58px;grid-column:1/-1"></div></div>
   </section>
 
-  <div class="onglets trois six" id="vues" role="tablist" aria-label="Vue">
+  <div class="onglets trois six sept" id="vues" role="tablist" aria-label="Vue">
+    <button type="button" role="tab" class="puce-filtre" data-vue="joueurs" aria-selected="false">Joueurs</button>
     <button type="button" role="tab" class="puce-filtre on" data-vue="classement" aria-selected="true">Classement</button>
     <button type="button" role="tab" class="puce-filtre" data-vue="historique" aria-selected="false">Historique</button>
     <button type="button" role="tab" class="puce-filtre" data-vue="compos" aria-selected="false">Compos</button>
@@ -62,6 +63,7 @@
 
   <section id="vueHistorique" hidden aria-label="Historique des guerres">
     <p class="doux" id="infoHisto"></p>
+    <button type="button" class="btn sombre large" id="ajouterGuerre" hidden style="margin-bottom:10px"><svg class="ico" aria-hidden="true"><use href="/icons.svg#i-plus"/></svg>Ajouter une guerre passée</button>
     <ul class="liste" id="historique"></ul>
   </section>
 
@@ -70,6 +72,7 @@
     <div id="compos"></div>
   </section>
 
+  <section id="vueJoueurs" hidden aria-label="Attaques de chaque joueur"><div class="squelette" style="height:120px"></div></section>
   <section id="vueRaids" hidden aria-label="Raids du Capital"><div class="squelette" style="height:120px"></div></section>
   <section id="vueActivite" hidden aria-label="Activité des membres"><div class="squelette" style="height:120px"></div></section>
   <section id="vueLdc" hidden aria-label="Ligue de guerre"><div class="squelette" style="height:120px"></div></section>

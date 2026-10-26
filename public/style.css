@@ -443,3 +443,36 @@ body.plein::before{content:'';position:fixed;inset:0;background:#000;z-index:25}
 .seg .btn{min-width:0;padding:0 6px;line-height:1.05;white-space:normal;text-align:center}
 @media (max-width:370px){.seg .btn{font-size:13px;letter-spacing:.03em;padding:0 3px}}
 .compositeur .btn{flex:none;width:46px;min-height:46px;font-size:16px}
+/* Tableau joueurs × guerres */
+.grille-zone{margin:0 -4px}
+.grille{border-collapse:separate;border-spacing:0;font-size:12px;min-width:100%}
+.grille th,.grille td{padding:6px;border-bottom:1px solid rgba(148,178,220,.08);vertical-align:middle;text-align:center;white-space:nowrap}
+.grille thead th{font:700 11px/1.2 var(--titre);letter-spacing:.05em;text-transform:uppercase;color:var(--texte-2);vertical-align:bottom}
+.grille .col-g{min-width:84px}
+.grille .col-g small{display:block;color:var(--texte-3)}
+.grille .col-g b{display:block;max-width:96px;overflow:hidden;text-overflow:ellipsis;margin:2px auto 4px;color:#fff}
+.grille .fixe{position:sticky;left:0;z-index:1;background:#0B1424;text-align:left;max-width:120px;overflow:hidden;text-overflow:ellipsis;box-shadow:2px 0 0 var(--ligne)}
+.grille .fixe a{color:#fff;text-decoration:none;font:700 14px/1.1 var(--titre);letter-spacing:.02em}
+.grille .fixe small{display:block;color:var(--texte-3)}
+.grille .cell{display:flex;gap:3px;justify-content:center}
+.att{display:inline-grid;justify-items:center;min-width:30px;padding:3px 4px;border-radius:4px;font:700 13px/1 var(--titre);background:rgba(148,178,220,.1);color:var(--texte-2)}
+.att i{font:600 9px/1.2 var(--corps);font-style:normal;opacity:.8}
+.att.e3{background:rgba(245,184,46,.22);color:var(--or-clair)}
+.att.e2{background:rgba(51,209,255,.16);color:#9BE8FF}
+.att.e1{background:rgba(148,178,220,.14);color:#C9D6E8}
+.att.e0{background:rgba(255,71,87,.14);color:#FF9AA4}
+.att.rate{background:rgba(255,71,87,.22);color:#FF6B78;font-size:15px;padding:5px 8px}
+.att.attente{background:rgba(51,209,255,.08);color:var(--texte-3)}
+.grille .vide-c{color:var(--texte-3)}
+.grille .tot b{display:block;font:700 15px/1 var(--titre);color:#fff}
+.grille .tot small{display:block;margin-top:2px}
+@media (max-width:480px){.onglets.sept{grid-template-columns:repeat(4,1fr)}.onglets.sept .puce-filtre{font-size:13px;letter-spacing:.03em;padding:0 4px}}
+/* Saisie d'une guerre passée */
+.saisie{display:grid;gap:6px;max-height:50vh;overflow:auto;padding-right:4px}
+.saisie-j{padding:8px;border:1px solid var(--ligne);border-radius:8px;background:var(--creux)}
+.saisie-nom{display:flex;align-items:center;gap:8px}
+.saisie-nom input{width:20px;min-height:20px}
+.saisie-j:has(.participe:not(:checked)) .saisie-att{display:none}
+.saisie-att{display:grid;gap:6px;margin-top:6px}
+.att-ligne{display:grid;grid-template-columns:1.4fr .8fr .8fr;gap:6px}
+.att-ligne select,.att-ligne input{min-height:38px;padding:4px 8px;font-size:14px}

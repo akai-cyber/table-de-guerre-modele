@@ -220,6 +220,21 @@ async function suivreLigue() {
 // ---------- Notifications (push + Discord) ----------
 let envoyeur = N.creerEnvoyeur({ discordUrl: DISCORD });
 // Appelé une fois les données chargées : les clés VAPID sont créées une seule fois puis réutilisées.
+// Sauvegarde GitHub (branche « donnees » du dépôt, écrite par le relevé automatique) : relue au démarrage,
+// pour qu'aucune guerre ne soit perdue si l'hébergeur a effacé ses fichiers.
+const SAUVEGARDE_URL = process.env.SAUVEGARDE_URL || (process.env.RENDER_GIT_REPO_SLUG ? `https://raw.githubusercontent.com/${process.env.RENDER_GIT_REPO_SLUG}/donnees/guerres.json` : '');
+async function restaurerSauvegarde() {
+  if (!SAUVEGARDE_URL) return;
+  try {
+    const r = await fetch(SAUVEGARDE_URL, { signal: AbortSignal.timeout(15000), cache: 'no-store' });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.clan && CLAN_TAG && d.clan !== CLAN_TAG) return; // sauvegarde d'un autre clan
+    const f = G.fusionner(guerres, d.guerres);
+    if (f.ajouts) { guerres = f.guerres; save(); console.log(`Sauvegarde GitHub : ${f.ajouts} guerre(s) récupérée(s).`); }
+  } catch (e) { console.error('Sauvegarde GitHub illisible :', e.message); }
+}
+
 function initNotifs() {
   if (webpush && !vapid) { vapid = webpush.generateVAPIDKeys(); save(); }
   envoyeur = N.creerEnvoyeur({ webpush, vapid, contact: process.env.VAPID_CONTACT, discordUrl: DISCORD,
@@ -623,6 +638,55 @@ api.put('/guerres/:id/compo', (req, res) => {
   res.json({ ok: true, compo, armee: armee ? ARMEE.detailler(armee) : null });
 });
 
+// ---------- Guerres d'avant l'appli : saisie par le chef ----------
+api.post('/guerres/manuelle', exigerChef, async (req, res) => {
+  let clan = null;
+  try { clan = await clanActuel(); } catch (e) { /* nom du clan par défaut */ }
+  const v = G.guerreManuelle(req.body, clan || {});
+  if (v.erreur) return erreur(res, 400, v.erreur);
+  guerres = guerres.filter((g) => g.id !== v.valeur.id);
+  guerres.push(v.valeur);
+  guerres.sort((x, y) => Date.parse(y.debut || y.prep) - Date.parse(x.debut || x.prep));
+  save(); io.emit('guerres');
+  res.status(201).json({ guerre: G.resume(v.valeur) });
+});
+api.delete('/guerres/:id', exigerChef, (req, res) => {
+  const g = guerres.find((x) => x.id === req.params.id);
+  if (!g) return erreur(res, 404, 'Guerre introuvable.');
+  if (!g.manuelle) return erreur(res, 403, 'Seules les guerres saisies à la main peuvent être supprimées.');
+  guerres = guerres.filter((x) => x !== g); save(); io.emit('guerres');
+  res.json({ ok: true });
+});
+// Tableau joueurs × guerres : qui a attaqué, combien d'étoiles, qui a raté ses attaques.
+api.get('/grille', async (req, res) => {
+  const type = typeGuerre(req.query.type), n = entier(req.query.derniers, 10, MAX_GUERRES) || MAX_GUERRES;
+  const liste = guerres.filter((g) => g.etat !== 'preparation' && (type === 'tous' || g.type === type))
+    .sort((a, b) => Date.parse(b.fin || b.debut || b.prep) - Date.parse(a.fin || a.debut || a.prep)).slice(0, n);
+  let actuels = null;
+  try { actuels = (await clanActuel()).members; } catch (e) { /* liste indisponible */ }
+  const joueurs = new Map();
+  const ligne = (tag, nom, th) => { if (!joueurs.has(tag)) joueurs.set(tag, { tag, nom, th, cellules: {}, totaux: { attaques: 0, possibles: 0, etoiles: 0, triples: 0, manquees: 0, guerres: 0 } }); return joueurs.get(tag); };
+  for (const m of actuels || []) ligne(m.tag, m.name, m.th);
+  for (const g of liste) {
+    const finie = g.etat === 'warEnded';
+    for (const m of g.m) {
+      const l = ligne(m.t, m.n, m.th);
+      const rate = finie ? Math.max(0, g.apm - m.a.length) : 0;
+      l.cellules[g.id] = { a: m.a.map((a) => ({ e: a.e, p: Math.round(a.p), b: a.dpos })), rate, enCours: !finie };
+      const t = l.totaux;
+      t.guerres++; t.attaques += m.a.length; t.possibles += finie ? Math.max(g.apm, m.a.length) : m.a.length; t.manquees += rate;
+      for (const a of m.a) { t.etoiles += a.e; if (a.e === 3) t.triples++; }
+    }
+  }
+  const membres = actuels ? new Set(actuels.map((m) => m.tag)) : null;
+  const res2 = [...joueurs.values()].map((j) => ({ ...j, membre: membres ? membres.has(j.tag) : null }))
+    .filter((j) => j.totaux.guerres > 0 || j.membre)
+    .sort((a, b) => (b.membre === true) - (a.membre === true) || b.totaux.etoiles - a.totaux.etoiles || a.nom.localeCompare(b.nom));
+  res.json({ guerres: liste.map((g) => ({ id: g.id, fin: g.fin, debut: g.debut, adv: g.adv.n, res: g.res, apm: g.apm, type: g.type, manuelle: Boolean(g.manuelle), enCours: g.etat !== 'warEnded', nous: g.clan.e, eux: g.adv.e })), joueurs: res2 });
+});
+// Export public des archives (données de jeu publiques) : utilisé par la sauvegarde automatique sur GitHub.
+api.get('/export/guerres', (req, res) => res.json({ version: 1, exporte: new Date().toISOString(), clan: CLAN_TAG, guerres }));
+
 // ---------- Lien d'armée → compo ----------
 api.post('/armee', (req, res) => {
   const d = ARMEE.decoderLien(req.body && req.body.lien);
@@ -916,6 +980,7 @@ stockage.charger().then(appliquerDonnees).finally(initNotifs).finally(() => serv
   if (!TOKEN) console.log('Attention : CLASH_API_TOKEN manquant, la guerre ne se chargera pas (voir README).');
   if (!CLAN_TAG) console.log('Attention : CLAN_TAG manquant ou invalide (voir README).');
   if (!CHEF_CODE) console.log('Attention : CHEF_CODE manquant, le mode chef est désactivé (voir README).');
+  restaurerSauvegarde();
   setTimeout(releve, 60e3).unref();
   console.log(stockage.etat.type === 'upstash' ? 'Données enregistrées dans Upstash (durables).' : 'Données enregistrées dans un fichier local (effacé si l’hébergeur redémarre le service).');
 }));

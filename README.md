@@ -44,8 +44,13 @@ L'API Clash ne donne le détail des attaques que pour la guerre **en cours**. Le
 à chaque consultation et toutes les 5 minutes tant qu'il est réveillé (guerres classiques et ligue de guerre).
 Les guerres plus anciennes viennent du journal officiel (score seulement, journal de guerre public requis).
 
-Pour ne rater aucune fin de guerre sur Render gratuit (mise en veille après 15 min) : créer une tâche gratuite sur
-cron-job.org qui ouvre `https://<ton-service>.onrender.com/api/war` toutes les 10 minutes.
+**Relevé automatique** : le fichier `.github/workflows/releve.yml` (branche `main`) réveille le serveur toutes les
+10 minutes (GitHub Actions, gratuit), puis sauvegarde l'historique des guerres dans la branche `donnees`
+(`guerres.json`). Au démarrage, le serveur relit cette sauvegarde (adresse déduite de `RENDER_GIT_REPO_SLUG`,
+ou variable `SAUVEGARDE_URL`) : les guerres ne sont pas perdues même sans Upstash.
+
+**Guerres d'avant l'appli** : le chef peut saisir leur détail (Stats → Historique → « Saisir le détail ») ;
+elles comptent ensuite dans le tableau « Joueurs » et dans les stats.
 
 Note sur 100 : 40 pts triples (pondérés par l'écart d'HDV, ×0,7 à ×1,3), 25 pts étoiles moyennes, 20 pts attaques faites,
 15 pts destruction moyenne. Égalités départagées par les nouvelles étoiles puis le taux de triples.
