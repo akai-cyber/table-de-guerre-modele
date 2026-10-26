@@ -1,0 +1,74 @@
+# Relevé automatique de la table de guerre (gratuit, sans compte supplémentaire) :
+#  - toutes les 10 minutes, réveille le serveur Render et lui fait enregistrer la guerre en cours ;
+#  - sauvegarde l'historique des guerres dans la branche « donnees » de ce dépôt
+#    (le serveur la relit au démarrage : aucune guerre n'est perdue si Render efface ses fichiers).
+# Pour changer d'adresse : Settings → Secrets and variables → Actions → Variables → TABLE_URL.
+name: Relevé des guerres
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: releve
+  cancel-in-progress: false
+
+jobs:
+  releve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TABLE_URL: ${{ vars.TABLE_URL || 'https://table-de-guerre-modele.onrender.com' }}
+    steps:
+      - name: Réveiller le serveur et enregistrer la guerre en cours
+        run: |
+          for i in 1 2 3; do
+            curl -fsS --max-time 120 "$TABLE_URL/api/war" -o /dev/null && break
+            echo "Le serveur se réveille, nouvel essai…"; sleep 20
+          done
+          # Le serveur relève aussi la ligue de guerre, les raids et l'activité à chaque réveil.
+          curl -fsS --max-time 120 "$TABLE_URL/api/guerres" -o /dev/null || true
+
+      - name: Récupérer l'historique
+        run: |
+          curl -fsS --max-time 120 "$TABLE_URL/api/export/guerres" -o export.json
+          python3 - <<'PY'
+          import json
+          d = json.load(open('export.json'))
+          assert isinstance(d.get('guerres'), list), 'export invalide'
+          d.pop('exporte', None)  # pas d'horodatage : le fichier ne change que si les guerres changent
+          d['guerres'] = sorted(d['guerres'], key=lambda g: g['id'])
+          json.dump(d, open('guerres.json', 'w'), ensure_ascii=False, indent=1, sort_keys=True)
+          print(len(d['guerres']), 'guerre(s) dans l’export')
+          PY
+
+      - name: Sauvegarder dans la branche « donnees »
+        run: |
+          git config --global user.name "Relevé automatique"
+          git config --global user.email "releve@users.noreply.github.com"
+          git clone --quiet --depth 1 --branch donnees "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" sauvegarde 2>/dev/null || {
+            git init --quiet sauvegarde && cd sauvegarde && git checkout --quiet -b donnees && git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" && cd ..
+          }
+          cd sauvegarde
+          # Ne jamais remplacer une sauvegarde plus riche par un export vide (serveur fraîchement redémarré).
+          python3 - <<'PY'
+          import json, os
+          neuf = json.load(open('../guerres.json'))
+          if os.path.exists('guerres.json'):
+              ancien = json.load(open('guerres.json'))
+              par = {g['id']: g for g in ancien.get('guerres', [])}
+              for g in neuf['guerres']:
+                  a = par.get(g['id'])
+                  if not a or (g.get('maj') or '') >= (a.get('maj') or ''):
+                      par[g['id']] = g
+              neuf['guerres'] = sorted(par.values(), key=lambda g: g['id'])
+          json.dump(neuf, open('guerres.json', 'w'), ensure_ascii=False, indent=1, sort_keys=True)
+          PY
+          git add guerres.json
+          if git diff --cached --quiet; then echo "Rien de neuf."; exit 0; fi
+          git commit --quiet -m "Sauvegarde des guerres ($(python3 -c "import json;print(len(json.load(open('guerres.json'))['guerres']))") guerres)"
+          git push --quiet origin donnees
