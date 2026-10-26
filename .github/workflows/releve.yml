@@ -26,16 +26,25 @@ jobs:
     steps:
       - name: Réveiller le serveur et enregistrer la guerre en cours
         run: |
+          # Une erreur de l'API Clash (maintenance…) ne doit pas faire échouer le relevé : on réessaie au prochain.
           for i in 1 2 3; do
-            curl -fsS --max-time 120 "$TABLE_URL/api/war" -o /dev/null && break
-            echo "Le serveur se réveille, nouvel essai…"; sleep 20
+            code=$(curl -sS --max-time 120 -w '%{http_code}' "$TABLE_URL/api/war" -o /dev/null || echo 000)
+            [ "$code" != "000" ] && [ "$code" != "502" ] && [ "$code" != "503" ] && break
+            echo "Le serveur se réveille (code $code), nouvel essai…"; sleep 20
           done
+          echo "Réponse du serveur : $code"
           # Le serveur relève aussi la ligue de guerre, les raids et l'activité à chaque réveil.
           curl -fsS --max-time 120 "$TABLE_URL/api/guerres" -o /dev/null || true
 
       - name: Récupérer l'historique
+        id: export
         run: |
-          curl -fsS --max-time 120 "$TABLE_URL/api/export/guerres" -o export.json
+          code=$(curl -sS --max-time 120 -w '%{http_code}' "$TABLE_URL/api/export/guerres" -o export.json || echo 000)
+          if [ "$code" != "200" ]; then
+            echo "Export indisponible (code $code) : le serveur n'est peut-être pas encore à jour. Rien à sauvegarder."
+            echo "ok=0" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "ok=1" >> "$GITHUB_OUTPUT"
           python3 - <<'PY'
           import json
           d = json.load(open('export.json'))
@@ -47,6 +56,7 @@ jobs:
           PY
 
       - name: Sauvegarder dans la branche « donnees »
+        if: steps.export.outputs.ok == '1'
         run: |
           git config --global user.name "Relevé automatique"
           git config --global user.email "releve@users.noreply.github.com"
