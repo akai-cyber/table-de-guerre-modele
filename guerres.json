@@ -3,7 +3,7 @@
  "guerres": [
   {
    "adv": {
-    "a": 33,
+    "a": 34,
     "b": "https://api-assets.clashofclans.com/badges/70/StgCxoN_DMz_tzmKG5cT4Z3GWYx93TM8PvPlmyHeLA8.png",
     "e": 74,
     "n": "Cosmic Synergy",
@@ -12,11 +12,11 @@
    },
    "apm": 2,
    "clan": {
-    "a": 34,
+    "a": 38,
     "b": "https://api-assets.clashofclans.com/badges/70/xDfjY8UfIdEX3274m5oya0u34B4SdVd9ulgWFJZLc1Q.png",
-    "e": 63,
+    "e": 72,
     "n": "[T]_H_[M]",
-    "p": 90.2,
+    "p": 98.88,
     "t": "#2CJURJQC0"
    },
    "debut": "2026-10-26T06:24:50.000Z",
@@ -58,7 +58,28 @@
      "th": 8
     },
     {
-     "a": [],
+     "a": [
+      {
+       "d": "#R0L92YJVC",
+       "dpos": 22,
+       "dth": 5,
+       "du": 51,
+       "e": 3,
+       "ne": 3,
+       "o": 69,
+       "p": 100
+      },
+      {
+       "d": "#Q9CVUUPY8",
+       "dpos": 10,
+       "dth": 6,
+       "du": 62,
+       "e": 3,
+       "ne": 2,
+       "o": 70,
+       "p": 100
+      }
+     ],
      "de": {
       "e": 3,
       "n": 1,
@@ -80,11 +101,21 @@
        "ne": 3,
        "o": 41,
        "p": 100
+      },
+      {
+       "d": "#R8U2YG08P",
+       "dpos": 9,
+       "dth": 6,
+       "du": 59,
+       "e": 3,
+       "ne": 1,
+       "o": 72,
+       "p": 100
       }
      ],
      "de": {
       "e": 3,
-      "n": 1,
+      "n": 2,
       "p": 100
      },
      "n": "LePigeon",
@@ -345,6 +376,16 @@
        "e": 3,
        "ne": 3,
        "o": 45,
+       "p": 100
+      },
+      {
+       "d": "#RY8VY92CV",
+       "dpos": 18,
+       "dth": 5,
+       "du": 98,
+       "e": 3,
+       "ne": 3,
+       "o": 68,
        "p": 100
       }
      ],
@@ -685,7 +726,7 @@
      "th": 3
     }
    ],
-   "maj": "2026-10-26T21:05:36.678Z",
+   "maj": "2026-10-27T00:22:27.229Z",
    "prep": "2026-10-25T07:24:50.000Z",
    "res": null,
    "taille": 25,
