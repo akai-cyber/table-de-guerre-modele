@@ -3,11 +3,11 @@
  "guerres": [
   {
    "adv": {
-    "a": 34,
+    "a": 39,
     "b": "https://api-assets.clashofclans.com/badges/70/StgCxoN_DMz_tzmKG5cT4Z3GWYx93TM8PvPlmyHeLA8.png",
     "e": 74,
     "n": "Cosmic Synergy",
-    "p": 98.4,
+    "p": 99.08,
     "t": "#2JJ8280PJ"
    },
    "apm": 2,
@@ -49,8 +49,8 @@
      ],
      "de": {
       "e": 2,
-      "n": 3,
-      "p": 60
+      "n": 5,
+      "p": 77
      },
      "n": "AKAI",
      "pos": 1,
@@ -82,7 +82,7 @@
      ],
      "de": {
       "e": 3,
-      "n": 1,
+      "n": 2,
       "p": 100
      },
      "n": "koko",
@@ -115,7 +115,7 @@
      ],
      "de": {
       "e": 3,
-      "n": 2,
+      "n": 3,
       "p": 100
      },
      "n": "LePigeon",
@@ -616,7 +616,7 @@
      ],
      "de": {
       "e": 3,
-      "n": 1,
+      "n": 2,
       "p": 100
      },
      "n": "kyllian_lrx",
@@ -726,7 +726,7 @@
      "th": 3
     }
    ],
-   "maj": "2026-10-27T00:22:27.229Z",
+   "maj": "2026-10-27T05:21:06.621Z",
    "prep": "2026-10-25T07:24:50.000Z",
    "res": null,
    "taille": 25,
