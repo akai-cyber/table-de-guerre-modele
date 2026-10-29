@@ -734,7 +734,7 @@
   },
   {
    "adv": {
-    "a": 30,
+    "a": 33,
     "b": "https://api-assets.clashofclans.com/badges/70/te0VgxbEOFsZRyXLs92tPol2HXYryxszUsqGe3qzohI.png",
     "e": 70,
     "n": "clan uchiha",
@@ -891,7 +891,7 @@
      ],
      "de": {
       "e": 1,
-      "n": 2,
+      "n": 3,
       "p": 77
      },
      "n": "dirty deeds",
@@ -990,7 +990,7 @@
      ],
      "de": {
       "e": 2,
-      "n": 1,
+      "n": 4,
       "p": 91
      },
      "n": "Pioupiou",
@@ -1394,7 +1394,7 @@
      "th": 3
     }
    ],
-   "maj": "2026-10-28T21:28:23.855Z",
+   "maj": "2026-10-29T01:09:25.504Z",
    "prep": "2026-10-27T07:32:00.000Z",
    "res": null,
    "taille": 25,
