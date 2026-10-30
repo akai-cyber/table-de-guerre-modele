@@ -1399,6 +1399,280 @@
    "res": null,
    "taille": 25,
    "type": "c"
+  },
+  {
+   "adv": {
+    "a": 6,
+    "b": "https://api-assets.clashofclans.com/badges/70/BIZ4D9ihzimhDQ4y8GKb0VbXvJKDiLVIJ_MyIQxDVLA.png",
+    "e": 18,
+    "n": "Shadow Monarch",
+    "p": 40,
+    "t": "#2CV0VJYCY"
+   },
+   "apm": 2,
+   "clan": {
+    "a": 6,
+    "b": "https://api-assets.clashofclans.com/badges/70/R1X42Eu7-6DY80p4FAxDAorcDk9xrYRpq-qNGhalPeU.png",
+    "e": 13,
+    "n": "[T]_H_[M]",
+    "p": 30.93,
+    "t": "#2CJURJQC0"
+   },
+   "debut": "2026-10-30T06:59:00.000Z",
+   "etat": "inWar",
+   "fin": "2026-10-31T06:59:00.000Z",
+   "id": "c-20261029T075900.000Z",
+   "m": [
+    {
+     "a": [
+      {
+       "d": "#YV8VVGU29",
+       "dpos": 1,
+       "dth": 9,
+       "du": 154,
+       "e": 1,
+       "ne": 1,
+       "o": 3,
+       "p": 64
+      },
+      {
+       "d": "#R9G9J8LQY",
+       "dpos": 2,
+       "dth": 9,
+       "du": 119,
+       "e": 3,
+       "ne": 1,
+       "o": 4,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "AKAI",
+     "pos": 1,
+     "t": "#RY8JR0Y8Y",
+     "th": 8
+    },
+    {
+     "a": [
+      {
+       "d": "#R9G9J8LQY",
+       "dpos": 2,
+       "dth": 9,
+       "du": 94,
+       "e": 2,
+       "ne": 2,
+       "o": 2,
+       "p": 60
+      }
+     ],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "dirty deeds",
+     "pos": 2,
+     "t": "#R99QV0Y0Q",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "LePigeon",
+     "pos": 3,
+     "t": "#R9P9CPRGC",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "koko",
+     "pos": 4,
+     "t": "#R90CGVYPR",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "Pioupiou",
+     "pos": 5,
+     "t": "#RYCVQJJL2",
+     "th": 7
+    },
+    {
+     "a": [
+      {
+       "d": "#R2JUGUQL2",
+       "dpos": 6,
+       "dth": 7,
+       "du": 50,
+       "e": 3,
+       "ne": 3,
+       "o": 1,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "ZorTex",
+     "pos": 6,
+     "t": "#R0V9L9Y82",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Kévin",
+     "pos": 7,
+     "t": "#R9Y20PC9Y",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "gorrock",
+     "pos": 8,
+     "t": "#R0RCUQ9LC",
+     "th": 6
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "helma89",
+     "pos": 9,
+     "t": "#R8CYRC2UG",
+     "th": 5
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "jeff",
+     "pos": 10,
+     "t": "#GCYL808LR",
+     "th": 5
+    },
+    {
+     "a": [
+      {
+       "d": "#RPVPQ8VCL",
+       "dpos": 7,
+       "dth": 5,
+       "du": 86,
+       "e": 3,
+       "ne": 3,
+       "o": 9,
+       "p": 100
+      },
+      {
+       "d": "#R9PV98J09",
+       "dpos": 9,
+       "dth": 6,
+       "du": 59,
+       "e": 3,
+       "ne": 3,
+       "o": 10,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "xzozox",
+     "pos": 11,
+     "t": "#GJYQQCU2U",
+     "th": 5
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "farani126",
+     "pos": 12,
+     "t": "#GJUG00VL2",
+     "th": 5
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "kyllian_lrx",
+     "pos": 13,
+     "t": "#R9PV02C90",
+     "th": 5
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Aersen",
+     "pos": 14,
+     "t": "#R22QYLPVY",
+     "th": 5
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "__[SKAYRXW]__",
+     "pos": 15,
+     "t": "#GCP02LP2Q",
+     "th": 4
+    }
+   ],
+   "maj": "2026-10-30T09:22:32.035Z",
+   "prep": "2026-10-29T07:59:00.000Z",
+   "res": null,
+   "taille": 15,
+   "type": "c"
   }
  ],
  "version": 1
