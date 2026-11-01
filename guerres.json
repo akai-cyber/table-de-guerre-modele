@@ -1799,6 +1799,189 @@
    "res": null,
    "taille": 15,
    "type": "c"
+  },
+  {
+   "adv": {
+    "a": 0,
+    "b": "https://api-assets.clashofclans.com/badges/70/LMpO1nNAJZnA_c1vVIElJQ8SfZnNSA0mM8Qcn-jmaWM.png",
+    "e": 0,
+    "n": "SaBLeNK",
+    "p": 0,
+    "t": "#GGGRPQYL"
+   },
+   "apm": 2,
+   "clan": {
+    "a": 3,
+    "b": "https://api-assets.clashofclans.com/badges/70/R1X42Eu7-6DY80p4FAxDAorcDk9xrYRpq-qNGhalPeU.png",
+    "e": 9,
+    "n": "[T]_H_[M]",
+    "p": 30,
+    "t": "#2CJURJQC0"
+   },
+   "debut": "2026-11-01T13:58:10.000Z",
+   "etat": "inWar",
+   "fin": "2026-11-02T13:58:10.000Z",
+   "id": "c-20261031T145810.000Z",
+   "m": [
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "lko",
+     "pos": 1,
+     "t": "#QLC8LUVUQ",
+     "th": 11
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "dirty deeds",
+     "pos": 2,
+     "t": "#R99QV0Y0Q",
+     "th": 8
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Peaceandlove",
+     "pos": 3,
+     "t": "#GVCGCG0CY",
+     "th": 8
+    },
+    {
+     "a": [
+      {
+       "d": "#QCLPUG8JY",
+       "dpos": 4,
+       "dth": 6,
+       "du": 74,
+       "e": 3,
+       "ne": 3,
+       "o": 3,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Kévin",
+     "pos": 4,
+     "t": "#R9Y20PC9Y",
+     "th": 8
+    },
+    {
+     "a": [
+      {
+       "d": "#QR0LGGVLY",
+       "dpos": 5,
+       "dth": 5,
+       "du": 72,
+       "e": 3,
+       "ne": 3,
+       "o": 2,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "minimanu01",
+     "pos": 5,
+     "t": "#R9R02JJRV",
+     "th": 6
+    },
+    {
+     "a": [
+      {
+       "d": "#QCRUGYJ2V",
+       "dpos": 6,
+       "dth": 5,
+       "du": 60,
+       "e": 3,
+       "ne": 3,
+       "o": 1,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "xzozox",
+     "pos": 6,
+     "t": "#GJYQQCU2U",
+     "th": 6
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Le_Pêcheur",
+     "pos": 7,
+     "t": "#R9YVU8QR8",
+     "th": 5
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Axel",
+     "pos": 8,
+     "t": "#GVJ0QRC08",
+     "th": 6
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "kyllian_lrx",
+     "pos": 9,
+     "t": "#R9PV02C90",
+     "th": 5
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "__[SKAYRXW]__",
+     "pos": 10,
+     "t": "#GCP02LP2Q",
+     "th": 5
+    }
+   ],
+   "maj": "2026-11-01T15:26:28.238Z",
+   "prep": "2026-10-31T14:58:10.000Z",
+   "res": null,
+   "taille": 10,
+   "type": "c"
   }
  ],
  "version": 1
