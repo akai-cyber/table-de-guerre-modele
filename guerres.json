@@ -1811,7 +1811,7 @@
    },
    "apm": 2,
    "clan": {
-    "a": 10,
+    "a": 11,
     "b": "https://api-assets.clashofclans.com/badges/70/R1X42Eu7-6DY80p4FAxDAorcDk9xrYRpq-qNGhalPeU.png",
     "e": 30,
     "n": "[T]_H_[M]",
@@ -1924,6 +1924,16 @@
        "e": 3,
        "ne": 3,
        "o": 2,
+       "p": 100
+      },
+      {
+       "d": "#QCRUGYJ2V",
+       "dpos": 6,
+       "dth": 5,
+       "du": 63,
+       "e": 3,
+       "ne": 0,
+       "o": 13,
        "p": 100
       }
      ],
@@ -2051,7 +2061,7 @@
      "th": 5
     }
    ],
-   "maj": "2026-11-02T02:35:06.985Z",
+   "maj": "2026-11-02T09:55:04.427Z",
    "prep": "2026-10-31T14:58:10.000Z",
    "res": null,
    "taille": 10,
