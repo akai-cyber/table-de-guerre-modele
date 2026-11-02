@@ -1802,20 +1802,20 @@
   },
   {
    "adv": {
-    "a": 0,
+    "a": 2,
     "b": "https://api-assets.clashofclans.com/badges/70/LMpO1nNAJZnA_c1vVIElJQ8SfZnNSA0mM8Qcn-jmaWM.png",
-    "e": 0,
+    "e": 6,
     "n": "SaBLeNK",
-    "p": 0,
+    "p": 20,
     "t": "#GGGRPQYL"
    },
    "apm": 2,
    "clan": {
-    "a": 9,
+    "a": 10,
     "b": "https://api-assets.clashofclans.com/badges/70/R1X42Eu7-6DY80p4FAxDAorcDk9xrYRpq-qNGhalPeU.png",
-    "e": 27,
+    "e": 30,
     "n": "[T]_H_[M]",
-    "p": 90,
+    "p": 100,
     "t": "#2CJURJQC0"
    },
    "debut": "2026-11-01T13:58:10.000Z",
@@ -1824,11 +1824,22 @@
    "id": "c-20261031T145810.000Z",
    "m": [
     {
-     "a": [],
+     "a": [
+      {
+       "d": "#8QRRC2VLV",
+       "dpos": 1,
+       "dth": 11,
+       "du": 170,
+       "e": 3,
+       "ne": 3,
+       "o": 12,
+       "p": 100
+      }
+     ],
      "de": {
-      "e": 0,
-      "n": 0,
-      "p": 0
+      "e": 3,
+      "n": 1,
+      "p": 100
      },
      "n": "lko",
      "pos": 1,
@@ -1838,9 +1849,9 @@
     {
      "a": [],
      "de": {
-      "e": 0,
-      "n": 0,
-      "p": 0
+      "e": 3,
+      "n": 1,
+      "p": 100
      },
      "n": "dirty deeds",
      "pos": 2,
@@ -2040,7 +2051,7 @@
      "th": 5
     }
    ],
-   "maj": "2026-11-01T23:17:03.104Z",
+   "maj": "2026-11-02T02:35:06.985Z",
    "prep": "2026-10-31T14:58:10.000Z",
    "res": null,
    "taille": 10,
