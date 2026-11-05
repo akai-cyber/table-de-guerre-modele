@@ -2069,29 +2069,40 @@
   },
   {
    "adv": {
-    "a": 3,
+    "a": 4,
     "b": "https://api-assets.clashofclans.com/badges/70/dj3ZfJvmf1yg0G7ZyjTi0Cw0nTdQVuP7zm3l4pkV15k.png",
-    "e": 8,
+    "e": 11,
     "n": "Kurd clan",
-    "p": 9.37,
+    "p": 12.7,
     "t": "#2Y0R9Y2L0"
    },
    "apm": 1,
    "clan": {
-    "a": 17,
+    "a": 19,
     "b": "https://api-assets.clashofclans.com/badges/70/R1X42Eu7-6DY80p4FAxDAorcDk9xrYRpq-qNGhalPeU.png",
-    "e": 17,
+    "e": 20,
     "n": "[T]_H_[M]",
-    "p": 21.73,
+    "p": 25.07,
     "t": "#2CJURJQC0"
    },
    "debut": "2026-11-03T14:49:28.000Z",
-   "etat": "inWar",
-   "fin": "2026-11-04T14:49:28.000Z",
+   "etat": "warEnded",
+   "fin": "2026-11-04T15:13:56.000Z",
    "id": "l-8JQ80QJ2U",
    "m": [
     {
-     "a": [],
+     "a": [
+      {
+       "d": "#L2JQ0U9PC",
+       "dpos": 15,
+       "dth": 12,
+       "du": 67,
+       "e": 3,
+       "ne": 3,
+       "o": 22,
+       "p": 100
+      }
+     ],
      "de": {
       "e": 3,
       "n": 1,
@@ -2162,9 +2173,9 @@
       }
      ],
      "de": {
-      "e": 0,
-      "n": 0,
-      "p": 0
+      "e": 3,
+      "n": 1,
+      "p": 100
      },
      "n": "Kévin",
      "pos": 4,
@@ -2566,7 +2577,18 @@
      "th": 5
     },
     {
-     "a": [],
+     "a": [
+      {
+       "d": "#GLUY9VR9U",
+       "dpos": 32,
+       "dth": 8,
+       "du": 130,
+       "e": 0,
+       "ne": 0,
+       "o": 21,
+       "p": 33
+      }
+     ],
      "de": {
       "e": 0,
       "n": 0,
@@ -2638,9 +2660,9 @@
      "th": 5
     }
    ],
-   "maj": "2026-11-03T22:04:44.108Z",
+   "maj": "2026-11-05T10:08:44.926Z",
    "prep": "2026-11-02T14:49:31.000Z",
-   "res": null,
+   "res": "victoire",
    "taille": 30,
    "type": "l"
   }
