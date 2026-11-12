@@ -2069,6 +2069,319 @@
   },
   {
    "adv": {
+    "a": 8,
+    "b": "https://api-assets.clashofclans.com/badges/70/930andOZUztswuKFN-p9cCTUs_HQ3awFVhvmlPB62MY.png",
+    "e": 23,
+    "n": "MeNeMen Gücü",
+    "p": 38,
+    "t": "#2CQ099PJJ"
+   },
+   "apm": 2,
+   "clan": {
+    "a": 4,
+    "b": "https://api-assets.clashofclans.com/badges/70/R1X42Eu7-6DY80p4FAxDAorcDk9xrYRpq-qNGhalPeU.png",
+    "e": 7,
+    "n": "[T]_H_[M]",
+    "p": 14.8,
+    "t": "#2CJURJQC0"
+   },
+   "debut": "2026-11-11T22:00:52.000Z",
+   "etat": "inWar",
+   "fin": "2026-11-12T22:00:52.000Z",
+   "id": "c-20261110T230052.000Z",
+   "m": [
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "lko",
+     "pos": 1,
+     "t": "#QLC8LUVUQ",
+     "th": 12
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "helma",
+     "pos": 2,
+     "t": "#Q290YP8V",
+     "th": 12
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "kader",
+     "pos": 3,
+     "t": "#L9LJ9LCR0",
+     "th": 11
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "AKAI",
+     "pos": 4,
+     "t": "#RY8JR0Y8Y",
+     "th": 10
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Duck",
+     "pos": 5,
+     "t": "#R9J28GUPC",
+     "th": 10
+    },
+    {
+     "a": [
+      {
+       "d": "#GUJVYUG2V",
+       "dpos": 6,
+       "dth": 9,
+       "du": 87,
+       "e": 1,
+       "ne": 1,
+       "o": 6,
+       "p": 52
+      }
+     ],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Kévin",
+     "pos": 6,
+     "t": "#R9Y20PC9Y",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Boulls02",
+     "pos": 7,
+     "t": "#GC2P0P2LR",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Peaceandlove",
+     "pos": 8,
+     "t": "#GVCGCG0CY",
+     "th": 8
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Jah's",
+     "pos": 9,
+     "t": "#LCP02RJYC",
+     "th": 8
+    },
+    {
+     "a": [
+      {
+       "d": "#Q9Y9PPGQC",
+       "dpos": 13,
+       "dth": 9,
+       "du": 98,
+       "e": 3,
+       "ne": 3,
+       "o": 10,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "ZorTex",
+     "pos": 10,
+     "t": "#R0V9L9Y82",
+     "th": 8
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "LePigeon",
+     "pos": 11,
+     "t": "#R9P9CPRGC",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "zeud59_2",
+     "pos": 12,
+     "t": "#R9YRLGLUV",
+     "th": 8
+    },
+    {
+     "a": [
+      {
+       "d": "#R99YRGLCY",
+       "dpos": 11,
+       "dth": 8,
+       "du": 110,
+       "e": 2,
+       "ne": 2,
+       "o": 8,
+       "p": 88
+      },
+      {
+       "d": "#RYU9V8LYC",
+       "dpos": 10,
+       "dth": 8,
+       "du": 81,
+       "e": 1,
+       "ne": 1,
+       "o": 9,
+       "p": 56
+      }
+     ],
+     "de": {
+      "e": 2,
+      "n": 1,
+      "p": 60
+     },
+     "n": "sénateur aimé",
+     "pos": 13,
+     "t": "#R920P9LLJ",
+     "th": 8
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "minimanu01",
+     "pos": 14,
+     "t": "#R9R02JJRV",
+     "th": 8
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "Jean Peuxplus",
+     "pos": 15,
+     "t": "#GLY9QYYL2",
+     "th": 8
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "helma89",
+     "pos": 16,
+     "t": "#R8CYRC2UG",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Baxouu",
+     "pos": 17,
+     "t": "#R20P8GYC2",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Oumalix",
+     "pos": 18,
+     "t": "#R9PQQLPVP",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Lou",
+     "pos": 19,
+     "t": "#R22VRV2R9",
+     "th": 7
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "kyllian_lrx",
+     "pos": 20,
+     "t": "#R9PV02C90",
+     "th": 6
+    }
+   ],
+   "maj": "2026-11-12T02:38:19.754Z",
+   "prep": "2026-11-10T23:00:52.000Z",
+   "res": null,
+   "taille": 20,
+   "type": "c"
+  },
+  {
+   "adv": {
     "a": 4,
     "b": "https://api-assets.clashofclans.com/badges/70/dj3ZfJvmf1yg0G7ZyjTi0Cw0nTdQVuP7zm3l4pkV15k.png",
     "e": 11,
