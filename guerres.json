@@ -2562,7 +2562,7 @@
   },
   {
    "adv": {
-    "a": 23,
+    "a": 24,
     "b": "https://api-assets.clashofclans.com/badges/70/1EUL_Fn6moNVfgGWPAdhtXquYRXeAYJlAFb4xOKWpPE.png",
     "e": 59,
     "n": "ULKA",
@@ -2674,7 +2674,7 @@
      ],
      "de": {
       "e": 2,
-      "n": 2,
+      "n": 3,
       "p": 92
      },
      "n": "Duck",
@@ -3099,7 +3099,7 @@
      "th": 7
     }
    ],
-   "maj": "2026-11-14T21:35:10.900Z",
+   "maj": "2026-11-15T01:16:35.965Z",
    "prep": "2026-11-13T02:18:29.000Z",
    "res": null,
    "taille": 20,
