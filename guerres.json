@@ -5732,6 +5732,270 @@
   },
   {
    "adv": {
+    "a": 7,
+    "b": "https://api-assets.clashofclans.com/badges/70/cncSgf85ULZMTP2RoXb3tGoRNa4KItSl8ugziOCuTCA.png",
+    "e": 20,
+    "n": "乂 WΛR LEGENDS 乂",
+    "p": 45.73,
+    "t": "#2U80QPJCR"
+   },
+   "apm": 2,
+   "clan": {
+    "a": 5,
+    "b": "https://api-assets.clashofclans.com/badges/70/L-ZOUufJIVmp9qaGnbcstrRxMlg9mtY5laR8GP0RD4I.png",
+    "e": 10,
+    "n": "[T]_H_[M]",
+    "p": 27.53,
+    "t": "#2CJURJQC0"
+   },
+   "debut": "2026-11-27T20:04:50.000Z",
+   "etat": "inWar",
+   "fin": "2026-11-28T20:04:50.000Z",
+   "id": "c-20261126T210450.000Z",
+   "m": [
+    {
+     "a": [],
+     "de": {
+      "e": 2,
+      "n": 1,
+      "p": 86
+     },
+     "n": "Jah's 2",
+     "pos": 1,
+     "t": "#G8CC288CR",
+     "th": 13
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "lko",
+     "pos": 2,
+     "t": "#QLC8LUVUQ",
+     "th": 12
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "AKAI",
+     "pos": 3,
+     "t": "#RY8JR0Y8Y",
+     "th": 11
+    },
+    {
+     "a": [
+      {
+       "d": "#G0C9U82VU",
+       "dpos": 4,
+       "dth": 11,
+       "du": 69,
+       "e": 0,
+       "ne": 0,
+       "o": 1,
+       "p": 45
+      },
+      {
+       "d": "#R92CP2QL9",
+       "dpos": 5,
+       "dth": 9,
+       "du": 118,
+       "e": 1,
+       "ne": 1,
+       "o": 2,
+       "p": 68
+      }
+     ],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Kévin",
+     "pos": 4,
+     "t": "#R9Y20PC9Y",
+     "th": 10
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "zeud59_2",
+     "pos": 5,
+     "t": "#R9YRLGLUV",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "quetin",
+     "pos": 6,
+     "t": "#G08PLCGJU",
+     "th": 10
+    },
+    {
+     "a": [
+      {
+       "d": "#QCPJY9U88",
+       "dpos": 7,
+       "dth": 9,
+       "du": 65,
+       "e": 3,
+       "ne": 3,
+       "o": 6,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "Jah's",
+     "pos": 7,
+     "t": "#LCP02RJYC",
+     "th": 9
+    },
+    {
+     "a": [
+      {
+       "d": "#R8JY8CG2G",
+       "dpos": 8,
+       "dth": 9,
+       "du": 89,
+       "e": 3,
+       "ne": 3,
+       "o": 5,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "ZorTex",
+     "pos": 8,
+     "t": "#R0V9L9Y82",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Boulls02",
+     "pos": 9,
+     "t": "#GC2P0P2LR",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "minimanu01",
+     "pos": 10,
+     "t": "#R9R02JJRV",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "A.Smasherr",
+     "pos": 11,
+     "t": "#R9PCRUUU2",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Jean Peuxplus",
+     "pos": 12,
+     "t": "#GLY9QYYL2",
+     "th": 9
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 0,
+      "n": 0,
+      "p": 0
+     },
+     "n": "Baxouu",
+     "pos": 13,
+     "t": "#R20P8GYC2",
+     "th": 8
+    },
+    {
+     "a": [],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "Oumalix",
+     "pos": 14,
+     "t": "#R9PQQLPVP",
+     "th": 8
+    },
+    {
+     "a": [
+      {
+       "d": "#RYQ89UGYU",
+       "dpos": 15,
+       "dth": 5,
+       "du": 74,
+       "e": 3,
+       "ne": 3,
+       "o": 4,
+       "p": 100
+      }
+     ],
+     "de": {
+      "e": 3,
+      "n": 1,
+      "p": 100
+     },
+     "n": "Chacha",
+     "pos": 15,
+     "t": "#R22QCYYYV",
+     "th": 7
+    }
+   ],
+   "maj": "2026-11-28T02:08:18.264Z",
+   "prep": "2026-11-26T21:04:50.000Z",
+   "res": null,
+   "taille": 15,
+   "type": "c"
+  },
+  {
+   "adv": {
     "a": 4,
     "b": "https://api-assets.clashofclans.com/badges/70/dj3ZfJvmf1yg0G7ZyjTi0Cw0nTdQVuP7zm3l4pkV15k.png",
     "e": 11,
